@@ -1,0 +1,2 @@
+backend/server url
+https://sopra-fs25-group-29-server.oa.r.appspot.com/
