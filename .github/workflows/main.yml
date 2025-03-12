@@ -23,6 +23,9 @@ jobs:
           distribution: "temurin"
           java-version: "17"
 
+      - name: Debug Network Connectivity
+        run: curl -v https://sonarcloud.io
+
       - name: Test and analyze
         run: ./gradlew test jacocoTestReport sonar
         env:
