@@ -4,7 +4,6 @@ plugins {
     id 'java'
     id 'idea'
     id 'jacoco'
-    id "org.sonarqube" version "4.4.1.3373"
 }
 
 group 'ch.uzh.ifi.hasel'
@@ -51,15 +50,6 @@ dependencies {
 
 bootJar {
     archiveFileName = "${archiveBaseName.get()}.${archiveExtension.get()}"
-}
-
-sonar {
-    properties {
-        property "sonar.projectKey", "aimalai_sopra-fs25-group-29-server"
-        property "sonar.organization", "aimalai" // Optional: for SonarCloud
-        property "sonar.host.url", "https://sonarcloud.io"
-        property "sonar.login", System.getenv("SONAR_TOKEN") // Use the SONAR_TOKEN from environment variables
-    }
 }
 
 jacocoTestReport {
