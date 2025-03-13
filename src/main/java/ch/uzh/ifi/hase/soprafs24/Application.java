@@ -29,7 +29,10 @@ public class Application {
     return new WebMvcConfigurer() {
       @Override
       public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**").allowedOrigins("*").allowedMethods("*");
+        // Restrict CORS configuration
+        registry.addMapping("/**")
+            .allowedOrigins("https://your-trusted-domain.com") // Replace with trusted domains
+            .allowedMethods("GET", "POST", "PUT", "DELETE");   // Specify allowed methods
       }
     };
   }
