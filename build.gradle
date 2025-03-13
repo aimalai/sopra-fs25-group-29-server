@@ -79,7 +79,7 @@ sonar { // Added SonarQube configuration
         property "sonar.projectKey", "aimalai_sopra-fs25-group-29-server"
         property "sonar.organization", "aimalai"
         property "sonar.host.url", "https://sonarcloud.io"
-        property "sonar.projectName", "Sopra Group 29 Server"
+        property "sonar.projectName", "sopra-fs25-group-29-server"
     }
 }
 
