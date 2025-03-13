@@ -4,6 +4,7 @@ plugins {
     id 'java'
     id 'idea'
     id 'jacoco'
+    id "org.sonarqube" version "6.0.1.5171" // Added SonarQube plugin
 }
 
 group 'ch.uzh.ifi.hasel'
@@ -70,6 +71,14 @@ if (secretPropsFile.exists()) {
     p.load(new FileInputStream(secretPropsFile))
     p.each { name, value ->
         ext[name] = value
+    }
+}
+
+sonar { // Added SonarQube configuration
+    properties {
+        property "sonar.projectKey", "aimalai_sopra-fs25-group-29-server"
+        property "sonar.organization", "aimalai"
+        property "sonar.host.url", "https://sonarcloud.io"
     }
 }
 
