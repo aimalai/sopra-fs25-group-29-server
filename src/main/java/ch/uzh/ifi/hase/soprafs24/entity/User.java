@@ -1,41 +1,40 @@
 package ch.uzh.ifi.hase.soprafs24.entity;
 
-import ch.uzh.ifi.hase.soprafs24.constant.UserStatus;
-
 import javax.persistence.*;
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 /**
  * Internal User Representation
- * This class composes the internal representation of the user and defines how
- * the user is stored in the database.
- * Every variable will be mapped into a database field with the @Column
- * annotation
- * - nullable = false -> this cannot be left empty
- * - unique = true -> this value must be unqiue across the database -> composes
- * the primary key
+ * This class defines how the user is stored in the database.
  */
 @Entity
-@Table(name = "USER")
+@Table(name = "Users") // Updated to match the database table name
 public class User implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
   @Id
-  @GeneratedValue
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
-
-  @Column(nullable = false)
-  private String name;
 
   @Column(nullable = false, unique = true)
   private String username;
 
-  @Column(nullable = false, unique = true)
-  private String token;
+  @Column(nullable = false)
+  private String password; // Added password for secure storage
+
+  @Column(unique = true)
+  private String email; // Optional email for future use
+
+  @Column
+  private String profilePicture; // Optional profile picture URL
 
   @Column(nullable = false)
-  private UserStatus status;
+  private LocalDateTime createdAt = LocalDateTime.now(); // Automatically set on creation
+
+  @Column
+  private LocalDateTime updatedAt; // For tracking updates
 
   public Long getId() {
     return id;
@@ -43,14 +42,6 @@ public class User implements Serializable {
 
   public void setId(Long id) {
     this.id = id;
-  }
-
-  public String getName() {
-    return name;
-  }
-
-  public void setName(String name) {
-    this.name = name;
   }
 
   public String getUsername() {
@@ -61,19 +52,43 @@ public class User implements Serializable {
     this.username = username;
   }
 
-  public String getToken() {
-    return token;
+  public String getPassword() {
+    return password;
   }
 
-  public void setToken(String token) {
-    this.token = token;
+  public void setPassword(String password) {
+    this.password = password;
   }
 
-  public UserStatus getStatus() {
-    return status;
+  public String getEmail() {
+    return email;
   }
 
-  public void setStatus(UserStatus status) {
-    this.status = status;
+  public void setEmail(String email) {
+    this.email = email;
+  }
+
+  public String getProfilePicture() {
+    return profilePicture;
+  }
+
+  public void setProfilePicture(String profilePicture) {
+    this.profilePicture = profilePicture;
+  }
+
+  public LocalDateTime getCreatedAt() {
+    return createdAt;
+  }
+
+  public void setCreatedAt(LocalDateTime createdAt) {
+    this.createdAt = createdAt;
+  }
+
+  public LocalDateTime getUpdatedAt() {
+    return updatedAt;
+  }
+
+  public void setUpdatedAt(LocalDateTime updatedAt) {
+    this.updatedAt = updatedAt;
   }
 }

@@ -1,6 +1,5 @@
 package ch.uzh.ifi.hase.soprafs24.service;
 
-import ch.uzh.ifi.hase.soprafs24.constant.UserStatus;
 import ch.uzh.ifi.hase.soprafs24.entity.User;
 import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,75 +10,76 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.Optional;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 public class UserServiceTest {
 
-  @Mock
-  private UserRepository userRepository;
+    @Mock
+    private UserRepository userRepository;
 
-  @InjectMocks
-  private UserService userService;
+    @InjectMocks
+    private UserService userService;
 
-  private User testUser;
+    private User testUser;
 
-  @BeforeEach
-  public void setup() {
-    MockitoAnnotations.openMocks(this);
+    @BeforeEach
+    public void setup() {
+        MockitoAnnotations.openMocks(this);
 
-    // given
-    testUser = new User();
-    testUser.setId(1L);
-    testUser.setName("testName");
-    testUser.setUsername("testUsername");
+        // given
+        testUser = new User();
+        testUser.setId(1L);
+        testUser.setUsername("testUsername");
+        testUser.setPassword("StrongPass@123");
+        testUser.setEmail("test@example.com");
 
-    // when -> any object is being save in the userRepository -> return the dummy
-    // testUser
-    Mockito.when(userRepository.save(Mockito.any())).thenReturn(testUser);
-  }
+        // Mocking user repository behavior
+        Mockito.when(userRepository.save(Mockito.any())).thenReturn(testUser);
+    }
 
-  @Test
-  public void createUser_validInputs_success() {
-    // when -> any object is being save in the userRepository -> return the dummy
-    // testUser
-    User createdUser = userService.createUser(testUser);
+    @Test
+    public void registerUser_validInputs_success() {
+        // when -> simulate saving user in repository
+        User registeredUser = userService.registerUser(testUser);
 
-    // then
-    Mockito.verify(userRepository, Mockito.times(1)).save(Mockito.any());
+        // then
+        Mockito.verify(userRepository, Mockito.times(1)).save(Mockito.any());
+        assertEquals(testUser.getId(), registeredUser.getId());
+        assertEquals(testUser.getUsername(), registeredUser.getUsername());
+        assertEquals(testUser.getEmail(), registeredUser.getEmail());
+        assertNotNull(registeredUser.getCreatedAt());
+    }
 
-    assertEquals(testUser.getId(), createdUser.getId());
-    assertEquals(testUser.getName(), createdUser.getName());
-    assertEquals(testUser.getUsername(), createdUser.getUsername());
-    assertNotNull(createdUser.getToken());
-    assertEquals(UserStatus.OFFLINE, createdUser.getStatus());
-  }
+    @Test
+    public void registerUser_duplicateUsername_throwsException() {
+        // given -> a first user with the same username already exists
+        Mockito.when(userRepository.existsByUsername(Mockito.any())).thenReturn(true);
 
-  @Test
-  public void createUser_duplicateName_throwsException() {
-    // given -> a first user has already been created
-    userService.createUser(testUser);
+        // then -> expect exception on attempt to register user
+        assertThrows(ResponseStatusException.class, () -> userService.registerUser(testUser));
+    }
 
-    // when -> setup additional mocks for UserRepository
-    Mockito.when(userRepository.findByName(Mockito.any())).thenReturn(testUser);
-    Mockito.when(userRepository.findByUsername(Mockito.any())).thenReturn(null);
+    @Test
+    public void loginUser_invalidCredentials_throwsException() {
+        // given -> no matching user found in repository
+        Mockito.when(userRepository.findByUsername(Mockito.any())).thenReturn(Optional.empty());
 
-    // then -> attempt to create second user with same user -> check that an error
-    // is thrown
-    assertThrows(ResponseStatusException.class, () -> userService.createUser(testUser));
-  }
+        // then -> expect exception when logging in
+        assertThrows(ResponseStatusException.class, () -> userService.login(testUser.getUsername(), testUser.getPassword()));
+    }
 
-  @Test
-  public void createUser_duplicateInputs_throwsException() {
-    // given -> a first user has already been created
-    userService.createUser(testUser);
+    @Test
+    public void loginUser_validCredentials_success() {
+        // given -> matching user found in repository
+        Mockito.when(userRepository.findByUsername(Mockito.any())).thenReturn(Optional.of(testUser));
 
-    // when -> setup additional mocks for UserRepository
-    Mockito.when(userRepository.findByName(Mockito.any())).thenReturn(testUser);
-    Mockito.when(userRepository.findByUsername(Mockito.any())).thenReturn(testUser);
+        // when -> simulate successful login
+        User loggedInUser = userService.login(testUser.getUsername(), testUser.getPassword());
 
-    // then -> attempt to create second user with same user -> check that an error
-    // is thrown
-    assertThrows(ResponseStatusException.class, () -> userService.createUser(testUser));
-  }
-
+        // then
+        assertEquals(testUser.getId(), loggedInUser.getId());
+        assertEquals(testUser.getUsername(), loggedInUser.getUsername());
+    }
 }

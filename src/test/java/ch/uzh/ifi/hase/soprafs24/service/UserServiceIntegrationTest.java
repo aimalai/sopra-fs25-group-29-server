@@ -1,6 +1,5 @@
 package ch.uzh.ifi.hase.soprafs24.service;
 
-import ch.uzh.ifi.hase.soprafs24.constant.UserStatus;
 import ch.uzh.ifi.hase.soprafs24.entity.User;
 import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,10 +10,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.Optional;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class for the UserResource REST resource.
+ * Test class for the UserService REST resource.
  *
  * @see UserService
  */
@@ -22,55 +23,58 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest
 public class UserServiceIntegrationTest {
 
-  @Qualifier("userRepository")
-  @Autowired
-  private UserRepository userRepository;
+    @Qualifier("userRepository")
+    @Autowired
+    private UserRepository userRepository;
 
-  @Autowired
-  private UserService userService;
+    @Autowired
+    private UserService userService;
 
-  @BeforeEach
-  public void setup() {
-    userRepository.deleteAll();
-  }
+    @BeforeEach
+    public void setup() {
+        userRepository.deleteAll();
+    }
 
-  @Test
-  public void createUser_validInputs_success() {
-    // given
-    assertNull(userRepository.findByUsername("testUsername"));
+    @Test
+    public void registerUser_validInputs_success() {
+        // given
+        assertTrue(userRepository.findByUsername("testUsername").isEmpty());
 
-    User testUser = new User();
-    testUser.setName("testName");
-    testUser.setUsername("testUsername");
+        User testUser = new User();
+        testUser.setUsername("testUsername");
+        testUser.setPassword("StrongPass@123");
+        testUser.setEmail("test@example.com");
 
-    // when
-    User createdUser = userService.createUser(testUser);
+        // when
+        User registeredUser = userService.registerUser(testUser);
 
-    // then
-    assertEquals(testUser.getId(), createdUser.getId());
-    assertEquals(testUser.getName(), createdUser.getName());
-    assertEquals(testUser.getUsername(), createdUser.getUsername());
-    assertNotNull(createdUser.getToken());
-    assertEquals(UserStatus.OFFLINE, createdUser.getStatus());
-  }
+        // then
+        Optional<User> retrievedUser = userRepository.findByUsername("testUsername");
+        assertTrue(retrievedUser.isPresent());
+        assertEquals(registeredUser.getId(), retrievedUser.get().getId());
+        assertEquals("testUsername", retrievedUser.get().getUsername());
+        assertEquals("test@example.com", retrievedUser.get().getEmail());
+        assertNotNull(retrievedUser.get().getCreatedAt());
+    }
 
-  @Test
-  public void createUser_duplicateUsername_throwsException() {
-    assertNull(userRepository.findByUsername("testUsername"));
+    @Test
+    public void registerUser_duplicateUsername_throwsException() {
+        // given
+        assertTrue(userRepository.findByUsername("testUsername").isEmpty());
 
-    User testUser = new User();
-    testUser.setName("testName");
-    testUser.setUsername("testUsername");
-    userService.createUser(testUser); // Removed unnecessary assignment to 'createdUser'
+        User testUser = new User();
+        testUser.setUsername("testUsername");
+        testUser.setPassword("StrongPass@123");
+        testUser.setEmail("test@example.com");
+        userService.registerUser(testUser);
 
-    // attempt to create second user with same username
-    User testUser2 = new User();
+        // attempt to register second user with same username
+        User testUser2 = new User();
+        testUser2.setUsername("testUsername");
+        testUser2.setPassword("AnotherStrongPass@123");
+        testUser2.setEmail("test2@example.com");
 
-    // change the name but forget about the username
-    testUser2.setName("testName2");
-    testUser2.setUsername("testUsername");
-
-    // check that an error is thrown
-    assertThrows(ResponseStatusException.class, () -> userService.createUser(testUser2));
-  }
+        // then -> Expect exception
+        assertThrows(ResponseStatusException.class, () -> userService.registerUser(testUser2));
+    }
 }

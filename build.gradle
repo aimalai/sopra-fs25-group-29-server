@@ -1,14 +1,14 @@
 plugins {
-    id 'org.springframework.boot' version '2.4.13'
+    id 'org.springframework.boot' version '2.6.12'
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
     id 'java'
     id 'idea'
     id 'jacoco'
-    id "org.sonarqube" version "6.0.1.5171" // Added SonarQube plugin
+    id "org.sonarqube" version "6.0.1.5171"
 }
 
-group 'ch.uzh.ifi.hasel'
-version '1.0.0'
+group 'ch.uzh.ifi.hase'
+version '1.0.4' // Reflect updates
 
 java {
     toolchain {
@@ -32,21 +32,32 @@ springBoot {
 }
 
 dependencies {
+    // Spring Boot Dependencies
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+
+    // Security and Validation Dependencies
+    implementation 'org.springframework.boot:spring-boot-starter-validation' // Validation starter
+    implementation 'org.springframework.security:spring-security-crypto:5.6.0' // BCryptPasswordEncoder
+    implementation 'org.hibernate.validator:hibernate-validator:6.2.4.Final' // Compatible Validator implementation for javax.validation
+
+    // MapStruct Dependencies
     implementation 'org.mapstruct:mapstruct:1.3.1.Final'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.3.1.Final'
     testAnnotationProcessor 'org.mapstruct:mapstruct-processor:1.3.1.Final'
 
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    implementation 'org.springframework.boot:spring-boot-starter-web'
+    // Database Driver
+    runtimeOnly 'org.postgresql:postgresql' // PostgreSQL database setup
 
+    // Development Tools
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
-    runtimeOnly 'com.h2database:h2'
 
+    // Testing Dependencies
     testImplementation('org.springframework.boot:spring-boot-starter-test') {
         exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
     }
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.5.2'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.5.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
 }
 
 bootJar {
@@ -74,7 +85,7 @@ if (secretPropsFile.exists()) {
     }
 }
 
-sonar { // Added SonarQube configuration
+sonar {
     properties {
         property "sonar.projectKey", "aimalai_sopra-fs25-group-29-server"
         property "sonar.organization", "aimalai"
