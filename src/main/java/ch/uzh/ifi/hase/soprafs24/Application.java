@@ -31,7 +31,7 @@ public class Application {
       public void addCorsMappings(CorsRegistry registry) {
         // Restrict CORS configuration
         registry.addMapping("/**")
-            .allowedOrigins("https://your-trusted-domain.com") // Replace with trusted domains
+            .allowedOrigins("http://localhost:3000", "sopra-fs25-group-29-client-hpxzyb8x5-malais-projects-de8e09f0.vercel.app") // Replace with trusted domains
             .allowedMethods("GET", "POST", "PUT", "DELETE");   // Specify allowed methods
       }
     };
