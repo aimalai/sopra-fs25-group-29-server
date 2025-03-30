@@ -28,16 +28,11 @@ public class Application {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                // Adjust CORS settings for Vercel connection and local use
                 registry.addMapping("/**")
-                        .allowedOrigins(
-                            "http://localhost:3000", 
-                            "https://sopra-fs25-group-29-client-baxxm6bny-malais-projects-de8e09f0.vercel.app", 
-                            "https://sopra-fs25-group-29-client-2k00ewv1o-malais-projects-de8e09f0.vercel.app"
-                        ) // Include all active Vercel deployments.
-                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") 
-                        .allowedHeaders("*")
-                        .allowCredentials(true);
+                        .allowedOrigins("*") // Allow all origins
+                        .allowedMethods("*") // Allow all HTTP methods
+                        .allowedHeaders("*") // Allow all headers
+                        .allowCredentials(true); // Allow credentials
             }
         };
     }
