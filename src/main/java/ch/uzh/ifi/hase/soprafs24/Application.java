@@ -30,7 +30,7 @@ public class Application {
             public void addCorsMappings(CorsRegistry registry) {
                 // Adjust CORS settings for Vercel connection and local use
                 registry.addMapping("/**")
-                        .allowedOrigins("http://localhost:3000", "https://sopra-fs25-group-29-client-baxxm6bny-malais-projects-de8e09f0.vercel.app") // Updated to correct Vercel URL.
+                        .allowedOrigins("http://localhost:3000", "https://sopra-fs25-group-29-client-2k00ewv1o-malais-projects-de8e09f0.vercel.app") // Updated to correct Vercel URL.
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") 
                         .allowedHeaders("*")
                         .allowCredentials(true);
