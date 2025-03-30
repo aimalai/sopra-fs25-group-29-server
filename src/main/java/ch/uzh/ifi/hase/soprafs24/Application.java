@@ -30,15 +30,15 @@ public class Application {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                        .allowedOrigins("*") // Fully open for testing
-                        .allowedMethods("*") // Allow all HTTP methods
-                        .allowedHeaders("*") // Allow all headers
-                        .allowCredentials(true); // Allow credentials
+                        .allowedOrigins("http://localhost:3000", "https://sopra-fs25-group-29-client-jzlrxxyfj-malais-projects-de8e09f0.vercel.app") // Replace with your origins
+                        .allowedMethods("*")
+                        .allowedHeaders("*")
+                        .allowCredentials(true);
             }
         };
     }
 
-    @RequestMapping(value = "/**", method = RequestMethod.OPTIONS) // Added Preflight Handler
+    @RequestMapping(value = "/**", method = RequestMethod.OPTIONS)
     public ResponseEntity<?> handlePreflight() {
         return ResponseEntity.ok().build();
     }
