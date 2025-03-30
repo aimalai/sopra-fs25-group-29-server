@@ -14,23 +14,26 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class Application {
 
   public static void main(String[] args) {
-    SpringApplication.run(Application.class, args);
+      SpringApplication.run(Application.class, args);
   }
 
   @GetMapping(value = "/", produces = MediaType.TEXT_PLAIN_VALUE)
   @ResponseStatus(HttpStatus.OK)
-  @ResponseBody
   public String helloWorld() {
-    return "The application is running.";
+      return "The application is running.";
   }
 
   @Bean
   public WebMvcConfigurer corsConfigurer() {
-    return new WebMvcConfigurer() {
-      @Override
-      public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**").allowedOrigins("*").allowedMethods("*");
-      }
-    };
+      return new WebMvcConfigurer() {
+          @Override
+          public void addCorsMappings(CorsRegistry registry) {
+              registry.addMapping("/**")
+                      .allowedOrigins("http://localhost:3000", "https://sopra-fs25-group-29-client-baxxm6bny-malais-projects-de8e09f0.vercel.app") // Updated to correct Vercel URL.
+                      .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") 
+                      .allowedHeaders("*")
+                      .allowCredentials(true);
+          }
+      };
   }
 }
