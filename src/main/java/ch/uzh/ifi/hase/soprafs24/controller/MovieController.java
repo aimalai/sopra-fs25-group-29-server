@@ -19,4 +19,10 @@ public class MovieController {
         String response = movieService.searchMovies(query);
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/details")
+    public ResponseEntity<String> getMovieDetails(@RequestParam String id) {
+        String response = movieService.getMovieDetails(id);
+        return ResponseEntity.ok(response);
+    }
 }
