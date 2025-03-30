@@ -40,7 +40,7 @@ public class UserServiceIntegrationTest {
     assertNull(userRepository.findByUsername("testUsername"));
 
     User testUser = new User();
-    testUser.setName("testName");
+    testUser.setPassword("User.1234");
     testUser.setUsername("testUsername");
 
     // when
@@ -48,10 +48,10 @@ public class UserServiceIntegrationTest {
 
     // then
     assertEquals(testUser.getId(), createdUser.getId());
-    assertEquals(testUser.getName(), createdUser.getName());
+    assertEquals(testUser.getPassword(), createdUser.getPassword());
     assertEquals(testUser.getUsername(), createdUser.getUsername());
     assertNotNull(createdUser.getToken());
-    assertEquals(UserStatus.OFFLINE, createdUser.getStatus());
+    assertEquals(UserStatus.ONLINE, createdUser.getStatus());
   }
 
   @Test
@@ -59,15 +59,15 @@ public class UserServiceIntegrationTest {
     assertNull(userRepository.findByUsername("testUsername"));
 
     User testUser = new User();
-    testUser.setName("testName");
+    testUser.setPassword("User.1234");
     testUser.setUsername("testUsername");
-    userService.createUser(testUser); // Removed unnecessary assignment to 'createdUser'
+    User createdUser = userService.createUser(testUser);
 
     // attempt to create second user with same username
     User testUser2 = new User();
 
     // change the name but forget about the username
-    testUser2.setName("testName2");
+    testUser2.setPassword("User.1234");
     testUser2.setUsername("testUsername");
 
     // check that an error is thrown

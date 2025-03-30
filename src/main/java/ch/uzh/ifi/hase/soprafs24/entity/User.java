@@ -4,17 +4,8 @@ import ch.uzh.ifi.hase.soprafs24.constant.UserStatus;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.time.LocalDate;
 
-/**
- * Internal User Representation
- * This class composes the internal representation of the user and defines how
- * the user is stored in the database.
- * Every variable will be mapped into a database field with the @Column
- * annotation
- * - nullable = false -> this cannot be left empty
- * - unique = true -> this value must be unqiue across the database -> composes
- * the primary key
- */
 @Entity
 @Table(name = "USER")
 public class User implements Serializable {
@@ -26,7 +17,7 @@ public class User implements Serializable {
   private Long id;
 
   @Column(nullable = false)
-  private String name;
+  private String password;
 
   @Column(nullable = false, unique = true)
   private String username;
@@ -37,6 +28,23 @@ public class User implements Serializable {
   @Column(nullable = false)
   private UserStatus status;
 
+  @Column(nullable = false)
+  private LocalDate creationDate;
+
+  @Column
+  private LocalDate birthday;
+
+  public User() {
+    this.creationDate = LocalDate.now();
+  }
+
+  @PrePersist
+  protected void onCreate() {
+    if (this.creationDate == null) {
+      this.creationDate = LocalDate.now();
+    }
+  }
+
   public Long getId() {
     return id;
   }
@@ -45,12 +53,12 @@ public class User implements Serializable {
     this.id = id;
   }
 
-  public String getName() {
-    return name;
+  public String getPassword() {
+    return password;
   }
 
-  public void setName(String name) {
-    this.name = name;
+  public void setPassword(String password) {
+    this.password = password;
   }
 
   public String getUsername() {
@@ -69,11 +77,27 @@ public class User implements Serializable {
     this.token = token;
   }
 
+  public LocalDate getCreationDate() {
+    return creationDate;
+  }
+
+  public void setCreationDate(LocalDate creationDate) {
+    this.creationDate = creationDate;
+  }
+
   public UserStatus getStatus() {
     return status;
   }
 
   public void setStatus(UserStatus status) {
     this.status = status;
+  }
+
+  public LocalDate getBirthday() {
+    return birthday;
+  }
+
+  public void setBirthday(LocalDate birthday) {
+    this.birthday = birthday;
   }
 }

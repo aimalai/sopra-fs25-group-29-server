@@ -19,7 +19,7 @@ public class Application {
 
   @GetMapping(value = "/", produces = MediaType.TEXT_PLAIN_VALUE)
   @ResponseStatus(HttpStatus.OK)
- 
+  @ResponseBody
   public String helloWorld() {
     return "The application is running.";
   }
@@ -29,10 +29,7 @@ public class Application {
     return new WebMvcConfigurer() {
       @Override
       public void addCorsMappings(CorsRegistry registry) {
-        // Restrict CORS configuration
-        registry.addMapping("/**")
-            .allowedOrigins("http://localhost:3000", "sopra-fs25-group-29-client-hpxzyb8x5-malais-projects-de8e09f0.vercel.app") // Replace with trusted domains
-            .allowedMethods("GET", "POST", "PUT", "DELETE");   // Specify allowed methods
+        registry.addMapping("/**").allowedOrigins("*").allowedMethods("*");
       }
     };
   }
