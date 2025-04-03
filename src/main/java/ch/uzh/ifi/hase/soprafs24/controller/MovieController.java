@@ -16,13 +16,19 @@ public class MovieController {
 
     @GetMapping("/search")
     public ResponseEntity<String> searchMovies(@RequestParam String query) {
-        String response = movieService.searchMovies(query);
+        String response = movieService.searchCombined(query);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/details")
     public ResponseEntity<String> getMovieDetails(@RequestParam String id) {
         String response = movieService.getMovieDetails(id);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/tv/details")
+    public ResponseEntity<String> getTVDetails(@RequestParam String id) {
+        String response = movieService.getTVDetails(id);
         return ResponseEntity.ok(response);
     }
 }
