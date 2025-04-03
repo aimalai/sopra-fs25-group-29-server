@@ -102,6 +102,7 @@ public class MovieService {
             String title = detailsNode.get("title").asText();
             String description = detailsNode.get("overview").asText();
             double ratings = detailsNode.get("vote_average").asDouble();
+            int voteCount = detailsNode.get("vote_count").asInt();
             String releaseDate = detailsNode.get("release_date").asText();
             String posterPath = detailsNode.get("poster_path").asText();
             StringBuilder result = new StringBuilder();
@@ -110,6 +111,7 @@ public class MovieService {
             result.append("\"title\":\"").append(title).append("\",");
             result.append("\"description\":\"").append(description.replace("\"", "\\\"")).append("\",");
             result.append("\"ratings\":").append(ratings).append(",");
+            result.append("\"vote_count\":").append(voteCount).append(",");
             result.append("\"release_date\":\"").append(releaseDate).append("\",");
             result.append("\"poster_path\":\"").append(posterPath).append("\",");
             result.append("\"genre\":\"").append(genre).append("\",");
@@ -162,6 +164,7 @@ public class MovieService {
             String title = detailsNode.get("name").asText();
             String description = detailsNode.get("overview").asText();
             double ratings = detailsNode.get("vote_average").asDouble();
+            int voteCount = detailsNode.get("vote_count").asInt();
             String releaseDate = detailsNode.get("first_air_date").asText();
             String posterPath = detailsNode.get("poster_path").asText();
             StringBuilder result = new StringBuilder();
@@ -170,6 +173,7 @@ public class MovieService {
             result.append("\"title\":\"").append(title).append("\",");
             result.append("\"description\":\"").append(description.replace("\"", "\\\"")).append("\",");
             result.append("\"ratings\":").append(ratings).append(",");
+            result.append("\"vote_count\":").append(voteCount).append(",");
             result.append("\"release_date\":\"").append(releaseDate).append("\",");
             result.append("\"poster_path\":\"").append(posterPath).append("\",");
             result.append("\"genre\":\"").append(genre).append("\",");
@@ -180,4 +184,5 @@ public class MovieService {
             throw new RuntimeException("Error fetching TV details", e);
         }
     }
+    
 }
