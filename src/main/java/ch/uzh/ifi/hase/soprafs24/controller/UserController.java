@@ -18,7 +18,7 @@ import java.util.List;
  * Handles all REST requests related to users.
  */
 @RestController
-@RequestMapping("/users") // Consolidating all endpoints under /users
+@RequestMapping("/users")
 public class UserController {
 
     private final UserService userService;
@@ -41,7 +41,7 @@ public class UserController {
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@Valid @RequestBody UserPostDTO userPostDTO) {
         try {
-            // Validate confirm password matches password
+            // Validate that confirm password matches password
             if (!userPostDTO.getPassword().equals(userPostDTO.getConfirmPassword())) {
                 throw new IllegalArgumentException("Passwords do not match!");
             }
@@ -61,12 +61,19 @@ public class UserController {
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(@RequestBody UserPostDTO userPostDTO) {
         try {
-            User user = userService.login(userPostDTO.getUsername(), userPostDTO.getPassword());
-            // Generate token upon login
-            String token = userService.generateToken(user);
+            // Attempt login with the userService
+            String token = userService.attemptLogin(userPostDTO.getUsername(), userPostDTO.getPassword());
             return new ResponseEntity<>(token, HttpStatus.OK);
         } catch (IllegalArgumentException e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.UNAUTHORIZED);
+            // Handle lockout or invalid login with clear feedback
+            String errorMessage = e.getMessage();
+            if (errorMessage.contains("Account locked")) {
+                return new ResponseEntity<>(errorMessage, HttpStatus.FORBIDDEN); // Lockout-specific status
+            }
+            return new ResponseEntity<>(errorMessage, HttpStatus.UNAUTHORIZED); // Invalid credentials
+        } catch (Exception e) {
+            // Generic error handling
+            return new ResponseEntity<>("An error occurred during login.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }

@@ -1,6 +1,7 @@
 package ch.uzh.ifi.hase.soprafs24.entity;
 
 import javax.persistence.*;
+import org.hibernate.annotations.DynamicUpdate; // Import DynamicUpdate annotation
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -9,7 +10,8 @@ import java.time.LocalDateTime;
  * This class defines how the user is stored in the database.
  */
 @Entity
-@Table(name = "Users") // Updated to match the database table name
+@DynamicUpdate // Ensures Hibernate only updates modified fields
+@Table(name = "users") // Updated to match the database table name
 public class User implements Serializable {
 
   private static final long serialVersionUID = 1L;
@@ -35,6 +37,15 @@ public class User implements Serializable {
 
   @Column
   private LocalDateTime updatedAt; // For tracking updates
+
+  @Column
+  private LocalDateTime lastLoginTime; // Tracks the last login time
+
+  @Column(nullable = false)
+  private int failedLoginAttempts = 0; // Tracks the number of failed login attempts
+
+  @Column
+  private LocalDateTime lockoutUntil; // Tracks the timestamp until which the user is locked out
 
   public Long getId() {
     return id;
@@ -90,5 +101,29 @@ public class User implements Serializable {
 
   public void setUpdatedAt(LocalDateTime updatedAt) {
     this.updatedAt = updatedAt;
+  }
+
+  public LocalDateTime getLastLoginTime() {
+    return lastLoginTime;
+  }
+
+  public void setLastLoginTime(LocalDateTime lastLoginTime) {
+    this.lastLoginTime = lastLoginTime;
+  }
+
+  public int getFailedLoginAttempts() {
+    return failedLoginAttempts;
+  }
+
+  public void setFailedLoginAttempts(int failedLoginAttempts) {
+    this.failedLoginAttempts = failedLoginAttempts;
+  }
+
+  public LocalDateTime getLockoutUntil() {
+    return lockoutUntil;
+  }
+
+  public void setLockoutUntil(LocalDateTime lockoutUntil) {
+    this.lockoutUntil = lockoutUntil;
   }
 }

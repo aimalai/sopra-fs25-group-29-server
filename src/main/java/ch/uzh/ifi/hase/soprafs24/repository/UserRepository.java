@@ -8,7 +8,8 @@ import java.util.Optional;
 
 @Repository("userRepository")
 public interface UserRepository extends JpaRepository<User, Long> {
-    Optional<User> findByUsername(String username); // Checks if the username is unique
 
-    boolean existsByUsername(String username); // Validates if the username already exists
+    Optional<User> findByUsername(String username);
+
+    boolean existsByUsername(String username);
 }

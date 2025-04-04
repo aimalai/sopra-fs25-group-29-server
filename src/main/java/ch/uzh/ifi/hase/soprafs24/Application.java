@@ -30,7 +30,7 @@ public class Application {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                        .allowedOrigins("http://localhost:3000", "https://sopra-fs25-group-29-client-jzlrxxyfj-malais-projects-de8e09f0.vercel.app") // Replace with your origins
+                        .allowedOrigins("http://localhost:3000", "https://sopra-fs25-group-29-client-86djqkxa1-malais-projects-de8e09f0.vercel.app") // Replace with your origins
                         .allowedMethods("*")
                         .allowedHeaders("*")
                         .allowCredentials(true);
