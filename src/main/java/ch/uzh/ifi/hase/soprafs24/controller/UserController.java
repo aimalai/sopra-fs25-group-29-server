@@ -41,14 +41,11 @@ public class UserController {
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@Valid @RequestBody UserPostDTO userPostDTO) {
         try {
-            // Validate that confirm password matches password
             if (!userPostDTO.getPassword().equals(userPostDTO.getConfirmPassword())) {
                 throw new IllegalArgumentException("Passwords do not match!");
             }
 
             User userInput = DTOMapper.INSTANCE.convertUserPostDTOtoEntity(userPostDTO);
-
-            // Automatically handle first login after registration
             String token = userService.handleFirstLogin(userInput);
             return new ResponseEntity<>(token, HttpStatus.CREATED);
         } catch (IllegalArgumentException e) {
@@ -61,19 +58,31 @@ public class UserController {
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(@RequestBody UserPostDTO userPostDTO) {
         try {
-            // Attempt login with the userService
             String token = userService.attemptLogin(userPostDTO.getUsername(), userPostDTO.getPassword());
             return new ResponseEntity<>(token, HttpStatus.OK);
         } catch (IllegalArgumentException e) {
-            // Handle lockout or invalid login with clear feedback
             String errorMessage = e.getMessage();
             if (errorMessage.contains("Account locked")) {
-                return new ResponseEntity<>(errorMessage, HttpStatus.FORBIDDEN); // Lockout-specific status
+                return new ResponseEntity<>(errorMessage, HttpStatus.FORBIDDEN);
             }
-            return new ResponseEntity<>(errorMessage, HttpStatus.UNAUTHORIZED); // Invalid credentials
+            return new ResponseEntity<>(errorMessage, HttpStatus.UNAUTHORIZED);
         } catch (Exception e) {
-            // Generic error handling
             return new ResponseEntity<>("An error occurred during login.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logoutUser(@RequestHeader(value = "Authorization", required = false) String token) {
+        try {
+            if (token == null || token.isEmpty()) {
+                throw new IllegalArgumentException("Missing token.");
+            }
+            userService.logout(token);
+            return new ResponseEntity<>("Logout successful.", HttpStatus.OK);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            return new ResponseEntity<>("An error occurred during logout.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }

@@ -8,7 +8,7 @@ import org.mockito.MockitoAnnotations;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
-public class UserServiceTest {
+public class UserServiceTestTwo {
 
     @InjectMocks
     private UserService userService;
@@ -19,7 +19,7 @@ public class UserServiceTest {
     }
 
     @Test
-    public void testTokenInvalidationOnLogout() {
+    public void testTokenBlacklisting() {
         // Arrange: Create a dummy user
         User dummyUser = new User();
         dummyUser.setUsername("testUser");
@@ -27,10 +27,10 @@ public class UserServiceTest {
         // Generate a token for the dummy user
         String token = userService.generateToken(dummyUser);
 
-        // Act: Logout by invalidating the token
+        // Act: Blacklist the token
         userService.logout(token);
 
-        // Assert: Verify the token is no longer valid
-        assertFalse(userService.isTokenValid(token), "The token should be invalid after logout.");
+        // Assert: Verify that the token is blacklisted
+        assertFalse(userService.isTokenValid(token), "Blacklisted token should be invalid.");
     }
 }

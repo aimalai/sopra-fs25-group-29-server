@@ -12,7 +12,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -29,6 +31,9 @@ public class UserService {
     private static final int MAX_FAILED_ATTEMPTS = 5;
     private static final int LOCKOUT_DURATION_MINUTES = 30;
 
+    // Token blacklist for invalidated tokens
+    private final Set<String> tokenBlacklist = new HashSet<>();
+
     @Autowired
     public UserService(@Qualifier("userRepository") UserRepository userRepository) {
         this.userRepository = userRepository;
@@ -39,30 +44,26 @@ public class UserService {
     }
 
     public String attemptLogin(String username, String password) {
-        // Find user by username
         User user = userRepository.findByUsername(username).orElseThrow(() ->
                 new IllegalArgumentException("Invalid username or password."));
 
-        // Check if user is locked
         if (isUserLocked(user)) {
             throw new IllegalArgumentException("Account locked due to too many failed login attempts. Try again after: " + user.getLockoutUntil() + ".");
         }
 
-        // Validate password
         if (!passwordEncoder.matches(password, user.getPassword())) {
             handleFailedLogin(user);
             throw new IllegalArgumentException("Invalid username or password.");
         }
 
-        // Reset failed attempts and lockout status on successful login
         user.setFailedLoginAttempts(0);
         user.setLockoutUntil(null);
         user.setLastLoginTime(LocalDateTime.now());
         userRepository.save(user);
 
-        // Generate and return token
+        String token = generateToken(user);
         log.info("User logged in successfully: {}", username);
-        return generateToken(user);
+        return token;
     }
 
     private boolean isUserLocked(User user) {
@@ -75,17 +76,13 @@ public class UserService {
     }
 
     private void handleFailedLogin(User user) {
-        // Increment failed attempts
         user.setFailedLoginAttempts(user.getFailedLoginAttempts() + 1);
         log.warn("Failed login attempt for user: {}, attempts: {}", user.getUsername(), user.getFailedLoginAttempts());
 
-        // Lockout user after maximum attempts
         if (user.getFailedLoginAttempts() >= MAX_FAILED_ATTEMPTS) {
             user.setLockoutUntil(LocalDateTime.now().plusMinutes(LOCKOUT_DURATION_MINUTES));
             log.warn("User {} locked out until {}", user.getUsername(), user.getLockoutUntil());
         }
-
-        // Persist changes
         userRepository.save(user);
     }
 
@@ -95,44 +92,44 @@ public class UserService {
         return token;
     }
 
-    public String handleFirstLogin(User newUser) {
-        // Register the user
-        User registeredUser = this.registerUser(newUser);
+    public void logout(String token) {
+        // Invalidate the token by adding it to the blacklist
+        tokenBlacklist.add(token);
+        log.info("Token invalidated: {}", token);
+    }
 
-        // Generate and return the token for first login
+    public boolean isTokenValid(String token) {
+        // Check if the token is blacklisted
+        return !tokenBlacklist.contains(token);
+    }
+
+    public String handleFirstLogin(User newUser) {
+        User registeredUser = this.registerUser(newUser);
         return this.generateToken(registeredUser);
     }
 
     public User registerUser(User newUser) {
-        // Validate mandatory fields
         if (newUser.getUsername() == null || newUser.getUsername().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username is required.");
         }
         if (newUser.getPassword() == null || newUser.getPassword().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Password is required.");
         }
-
-        // Validate username uniqueness
         if (userRepository.existsByUsername(newUser.getUsername())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Username is already taken.");
         }
-
-        // Validate password strength
         if (!isValidPassword(newUser.getPassword())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Password must meet strength requirements.");
         }
 
-        // Hash the password
         newUser.setPassword(passwordEncoder.encode(newUser.getPassword()));
         newUser.setCreatedAt(LocalDateTime.now());
 
-        // Save the new user
         log.info("Registering new user: {}", newUser.getUsername());
-        return userRepository.saveAndFlush(newUser); // Persist user immediately
+        return userRepository.saveAndFlush(newUser);
     }
 
     private boolean isValidPassword(String password) {
-        // Validate password strength: minimum 8 characters, at least one letter, number, and special character
         String passwordPattern = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$";
         return password.matches(passwordPattern);
     }
