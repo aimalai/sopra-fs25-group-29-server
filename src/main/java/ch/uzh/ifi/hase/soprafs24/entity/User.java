@@ -5,6 +5,8 @@ import ch.uzh.ifi.hase.soprafs24.constant.UserStatus;
 import javax.persistence.*;
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "USER")
@@ -34,6 +36,9 @@ public class User implements Serializable {
   @Column
   private LocalDate birthday;
 
+  @ElementCollection(fetch = FetchType.EAGER)
+    private List<String> watchlist = new ArrayList<>();
+  
   public User() {
     this.creationDate = LocalDate.now();
   }
@@ -99,5 +104,13 @@ public class User implements Serializable {
 
   public void setBirthday(LocalDate birthday) {
     this.birthday = birthday;
+  }
+
+  public List<String> getWatchlist() {
+    return watchlist;
+  }
+
+  public void setWatchlist(List<String> watchlist) {
+      this.watchlist = watchlist;
   }
 }
