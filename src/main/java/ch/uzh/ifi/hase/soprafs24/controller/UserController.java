@@ -47,6 +47,15 @@ public class UserController {
 
             User userInput = DTOMapper.INSTANCE.convertUserPostDTOtoEntity(userPostDTO);
             String token = userService.handleFirstLogin(userInput);
+
+            // Add a new session for the newly registered user using user ID
+            userService.manageUserSessions(userInput.getId(), token);
+
+            // Ensure session exists before responding
+            if (!userService.isSessionPresent(userInput.getId())) {
+                throw new IllegalArgumentException("Session creation failed.");
+            }
+
             return new ResponseEntity<>(token, HttpStatus.CREATED);
         } catch (IllegalArgumentException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
@@ -58,7 +67,20 @@ public class UserController {
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(@RequestBody UserPostDTO userPostDTO) {
         try {
+            // Existing login logic
             String token = userService.attemptLogin(userPostDTO.getUsername(), userPostDTO.getPassword());
+
+            // Fetch user details
+            User user = userService.getUserByUsername(userPostDTO.getUsername());
+
+            // Add session management logic using user ID
+            userService.manageUserSessions(user.getId(), token);
+
+            // Ensure session exists before responding
+            if (!userService.isSessionPresent(user.getId())) {
+                throw new IllegalArgumentException("Session validation failed after login.");
+            }
+
             return new ResponseEntity<>(token, HttpStatus.OK);
         } catch (IllegalArgumentException e) {
             String errorMessage = e.getMessage();

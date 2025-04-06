@@ -10,3 +10,10 @@ CREATE TABLE users (
     failed_login_attempts INT DEFAULT 0 NOT NULL, 
     lockout_until TIMESTAMP                       
 );
+
+
+CREATE TABLE user_sessions (
+    session_id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

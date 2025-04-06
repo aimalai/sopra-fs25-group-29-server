@@ -1,0 +1,6 @@
+2025-04-06 00:07:08 jdbc[13]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "USER_SESSIONS" not found; SQL statement:
+select * from user_sessions [42102-214]
+2025-04-06 00:08:32 jdbc[13]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "USER_SESSIONS" not found; SQL statement:
+select * from user_sessions [42102-214]
