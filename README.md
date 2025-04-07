@@ -13,7 +13,7 @@ Download your IDE of choice (e.g., [IntelliJ](https://www.jetbrains.com/idea/dow
 
 ### IntelliJ
 
-If you consider to use IntelliJ as your IDE of choice, you can make use of your free educational license [here](https://www.jetbrains.com/community/education/#students).
+If you consider to use IntelliJ as your IDE of choice, you can make use of your free educational license [here](https://www.jetbrains.com/community/education/#students)..
 
 1. File -> Open... -> SoPra server template
 2. Accept to import the project as a `gradle project`
