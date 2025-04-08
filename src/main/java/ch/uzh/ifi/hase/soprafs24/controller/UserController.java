@@ -67,21 +67,9 @@ public class UserController {
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(@RequestBody UserPostDTO userPostDTO) {
         try {
-            // Existing login logic
-            String token = userService.attemptLogin(userPostDTO.getUsername(), userPostDTO.getPassword());
-
-            // Fetch user details
-            User user = userService.getUserByUsername(userPostDTO.getUsername());
-
-            // Add session management logic using user ID
-            userService.manageUserSessions(user.getId(), token);
-
-            // Ensure session exists before responding
-            if (!userService.isSessionPresent(user.getId())) {
-                throw new IllegalArgumentException("Session validation failed after login.");
-            }
-
-            return new ResponseEntity<>(token, HttpStatus.OK);
+            // UPDATED: Login now sends OTP instead of returning token
+            String responseMessage = userService.attemptLogin(userPostDTO.getUsername(), userPostDTO.getPassword());
+            return new ResponseEntity<>(responseMessage, HttpStatus.OK);
         } catch (IllegalArgumentException e) {
             String errorMessage = e.getMessage();
             if (errorMessage.contains("Account locked")) {
@@ -90,6 +78,19 @@ public class UserController {
             return new ResponseEntity<>(errorMessage, HttpStatus.UNAUTHORIZED);
         } catch (Exception e) {
             return new ResponseEntity<>("An error occurred during login.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // NEW: OTP Verification Endpoint
+    @PostMapping("/verify-otp")
+    public ResponseEntity<?> verifyOTP(@RequestBody UserPostDTO userPostDTO) {
+        try {
+            String token = userService.verifyOTP(userPostDTO.getUsername(), userPostDTO.getOtp()); // Using new OTP method
+            return new ResponseEntity<>(token, HttpStatus.OK);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.UNAUTHORIZED);
+        } catch (Exception e) {
+            return new ResponseEntity<>("OTP verification failed.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

@@ -8,7 +8,7 @@ plugins {
 }
 
 group 'ch.uzh.ifi.hase'
-version '1.0.4' // Reflect updates
+version '1.0.4'
 
 java {
     toolchain {
@@ -37,10 +37,10 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
 
     // Security and Validation Dependencies
-    implementation 'org.springframework.boot:spring-boot-starter-validation' // Validation starter
-    implementation 'javax.validation:validation-api:2.0.1.Final' // Reverted to javax.validation
-    implementation 'org.springframework.security:spring-security-crypto:5.6.0' // BCryptPasswordEncoder
-    implementation 'org.hibernate.validator:hibernate-validator:6.2.4.Final' // Compatible Validator for javax.validation
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'javax.validation:validation-api:2.0.1.Final'
+    implementation 'org.springframework.security:spring-security-crypto:5.6.0'
+    implementation 'org.hibernate.validator:hibernate-validator:6.2.4.Final'
 
     // MapStruct Dependencies
     implementation 'org.mapstruct:mapstruct:1.3.1.Final'
@@ -48,8 +48,8 @@ dependencies {
     testAnnotationProcessor 'org.mapstruct:mapstruct-processor:1.3.1.Final'
 
     // Database Driver
-    runtimeOnly 'org.postgresql:postgresql' // PostgreSQL database setup
-    runtimeOnly 'com.h2database:h2:2.1.214' // Added H2 database driver
+    runtimeOnly 'org.postgresql:postgresql'
+    runtimeOnly 'com.h2database:h2:2.1.214'
 
     // Development Tools
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
@@ -60,6 +60,12 @@ dependencies {
     }
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
+
+    // JavaMail API for OTP emails
+    implementation 'com.sun.mail:jakarta.mail:2.0.1'
+
+    // NEW: Added Jakarta Activation API to fix missing DataHandler error
+    implementation 'jakarta.activation:jakarta.activation-api:2.0.1'
 }
 
 bootJar {

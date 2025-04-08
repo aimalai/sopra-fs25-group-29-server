@@ -1,7 +1,7 @@
 package ch.uzh.ifi.hase.soprafs24.entity;
 
 import javax.persistence.*;
-import org.hibernate.annotations.DynamicUpdate; // Import DynamicUpdate annotation
+import org.hibernate.annotations.DynamicUpdate;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -10,8 +10,8 @@ import java.time.LocalDateTime;
  * This class defines how the user is stored in the database.
  */
 @Entity
-@DynamicUpdate // Ensures Hibernate only updates modified fields
-@Table(name = "users") // Updated to match the database table name
+@DynamicUpdate
+@Table(name = "users")
 public class User implements Serializable {
 
   private static final long serialVersionUID = 1L;
@@ -24,28 +24,28 @@ public class User implements Serializable {
   private String username;
 
   @Column(nullable = false)
-  private String password; // Added password for secure storage
+  private String password;
 
-  @Column(unique = true)
-  private String email; // Optional email for future use
+  @Column(nullable = false, unique = true) // NEW: Email is required
+  private String email;
 
   @Column
-  private String profilePicture; // Optional profile picture URL
+  private String profilePicture;
 
   @Column(nullable = false)
-  private LocalDateTime createdAt = LocalDateTime.now(); // Automatically set on creation
+  private LocalDateTime createdAt = LocalDateTime.now();
 
   @Column
-  private LocalDateTime updatedAt; // For tracking updates
+  private LocalDateTime updatedAt;
 
   @Column
-  private LocalDateTime lastLoginTime; // Tracks the last login time
+  private LocalDateTime lastLoginTime;
 
   @Column(nullable = false)
-  private int failedLoginAttempts = 0; // Tracks the number of failed login attempts
+  private int failedLoginAttempts = 0;
 
   @Column
-  private LocalDateTime lockoutUntil; // Tracks the timestamp until which the user is locked out
+  private LocalDateTime lockoutUntil;
 
   public Long getId() {
     return id;

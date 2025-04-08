@@ -10,16 +10,20 @@ public class UserPostDTO {
     @NotBlank(message = "Username cannot be blank")
     private String username;
 
+    @NotNull(message = "Email is required") // NEW: Email is now required
+    @NotBlank(message = "Email cannot be blank")
+    private String email;
+
     @NotNull(message = "Password is required")
     @NotBlank(message = "Password cannot be blank")
     @Size(min = 8, message = "Password must be at least 8 characters long")
-    private String password; // Added password for registration
-
-    private String email; // Optional email for future scalability
+    private String password;
 
     @NotNull(message = "Confirm Password is required")
     @NotBlank(message = "Confirm Password cannot be blank")
-    private String confirmPassword; // Added confirmPassword for validation
+    private String confirmPassword;
+
+    private String otp; // OTP field for verification
 
     public String getUsername() {
         return username;
@@ -27,6 +31,14 @@ public class UserPostDTO {
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    public String getEmail() { // NEW: Getter for email
+        return email;
+    }
+
+    public void setEmail(String email) { // NEW: Setter for email
+        this.email = email;
     }
 
     public String getPassword() {
@@ -37,19 +49,19 @@ public class UserPostDTO {
         this.password = password;
     }
 
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
     public String getConfirmPassword() {
         return confirmPassword;
     }
 
     public void setConfirmPassword(String confirmPassword) {
         this.confirmPassword = confirmPassword;
+    }
+
+    public String getOtp() {
+        return otp;
+    }
+
+    public void setOtp(String otp) {
+        this.otp = otp;
     }
 }

@@ -4,6 +4,7 @@ import ch.uzh.ifi.hase.soprafs24.entity.User;
 import ch.uzh.ifi.hase.soprafs24.entity.UserSession;
 import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
 import ch.uzh.ifi.hase.soprafs24.repository.SessionRepository;
+import ch.uzh.ifi.hase.soprafs24.service.EmailService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,14 +16,14 @@ import org.springframework.web.server.ResponseStatusException;
 
 import javax.transaction.Transactional;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
 /**
- * User Service
- * Responsible for functionality related to the user (e.g., creating, modifying, login).
+ * User Service - Handles authentication & session management.
  */
 @Service
 public class UserService {
@@ -30,19 +31,22 @@ public class UserService {
     private final Logger log = LoggerFactory.getLogger(UserService.class);
     private final UserRepository userRepository;
     private final SessionRepository sessionRepository;
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder(); // Password hashing
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final EmailService emailService;
 
     private static final int MAX_FAILED_ATTEMPTS = 5;
     private static final int LOCKOUT_DURATION_MINUTES = 30;
 
-    // Token blacklist for invalidated tokens
     private final Set<String> tokenBlacklist = new HashSet<>();
+    private final HashMap<String, OTPEntry> otpStore = new HashMap<>();
 
     @Autowired
     public UserService(@Qualifier("userRepository") UserRepository userRepository,
-                       @Qualifier("sessionRepository") SessionRepository sessionRepository) {
+                       @Qualifier("sessionRepository") SessionRepository sessionRepository,
+                       EmailService emailService) {
         this.userRepository = userRepository;
         this.sessionRepository = sessionRepository;
+        this.emailService = emailService;
     }
 
     public List<User> getUsers() {
@@ -54,6 +58,7 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found."));
     }
 
+    // UPDATED: Login now generates OTP & sends email
     public String attemptLogin(String username, String password) {
         User user = userRepository.findByUsername(username).orElseThrow(() ->
                 new IllegalArgumentException("Invalid username or password."));
@@ -72,108 +77,101 @@ public class UserService {
         user.setLastLoginTime(LocalDateTime.now());
         userRepository.save(user);
 
-        String token = generateToken(user);
-        log.info("User logged in successfully: {}", username);
+        // Generate and send OTP
+        String otp = generateOTP();
+        otpStore.put(username, new OTPEntry(otp, LocalDateTime.now().plusMinutes(5)));
+        emailService.sendOTP(user.getEmail(), otp);
+        log.info("OTP sent to user: {}", username);
 
-        // Ensure session management during login
-        manageUserSessions(user.getId(), token);
+        return "OTP sent to your email.";
+    }
+
+    // OTP verification method
+    public String verifyOTP(String username, String otpInput) {
+        OTPEntry otpEntry = otpStore.get(username);
+
+        if (otpEntry == null || otpEntry.expirationTime.isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("OTP expired or invalid.");
+        }
+
+        if (!otpEntry.otp.equals(otpInput)) {
+            throw new IllegalArgumentException("Incorrect OTP.");
+        }
+
+        otpStore.remove(username); 
+
+        String token = generateToken(userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found.")));
+
+        manageUserSessions(userRepository.findByUsername(username).get().getId(), token);
         return token;
+    }
+
+    private String generateOTP() {
+        return String.valueOf((int)(Math.random() * 900000) + 100000);
     }
 
     private boolean isUserLocked(User user) {
         LocalDateTime lockoutEndTime = user.getLockoutUntil();
-        if (lockoutEndTime != null && LocalDateTime.now().isBefore(lockoutEndTime)) {
-            log.warn("User {} is locked out until {}", user.getUsername(), lockoutEndTime);
-            return true;
-        }
-        return false;
+        return lockoutEndTime != null && LocalDateTime.now().isBefore(lockoutEndTime);
     }
 
     private void handleFailedLogin(User user) {
         user.setFailedLoginAttempts(user.getFailedLoginAttempts() + 1);
-        log.warn("Failed login attempt for user: {}, attempts: {}", user.getUsername(), user.getFailedLoginAttempts());
 
         if (user.getFailedLoginAttempts() >= MAX_FAILED_ATTEMPTS) {
             user.setLockoutUntil(LocalDateTime.now().plusMinutes(LOCKOUT_DURATION_MINUTES));
-            log.warn("User {} locked out until {}", user.getUsername(), user.getLockoutUntil());
         }
         userRepository.save(user);
     }
 
     public String generateToken(User user) {
-        String token = UUID.randomUUID().toString();
-        log.debug("Generated token for user: {}", user.getUsername());
-        return token;
+        return UUID.randomUUID().toString();
     }
 
     public void logout(String token) {
-        // Invalidate the token by adding it to the blacklist
         tokenBlacklist.add(token);
-        log.info("Token invalidated: {}", token);
     }
 
     public boolean isTokenValid(String token) {
-        // Check if the token is blacklisted
         return !tokenBlacklist.contains(token);
     }
 
+    // UPDATED: Handle first-time login (register user, generate token)
     public String handleFirstLogin(User newUser) {
-        User registeredUser = this.registerUser(newUser);
-        return this.generateToken(registeredUser);
+        User registeredUser = registerUser(newUser);
+        return generateToken(registeredUser);
     }
 
+    // UPDATED: Register user and save email
     public User registerUser(User newUser) {
-        if (newUser.getUsername() == null || newUser.getUsername().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username is required.");
-        }
-        if (newUser.getPassword() == null || newUser.getPassword().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Password is required.");
-        }
         if (userRepository.existsByUsername(newUser.getUsername())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Username is already taken.");
         }
-        if (!isValidPassword(newUser.getPassword())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Password must meet strength requirements.");
+        if (userRepository.existsByEmail(newUser.getEmail())) {  // NEW: Prevent duplicate emails
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email is already taken.");
         }
 
         newUser.setPassword(passwordEncoder.encode(newUser.getPassword()));
         newUser.setCreatedAt(LocalDateTime.now());
+        newUser.setEmail(newUser.getEmail());  // NEW: Ensure email is stored
 
         log.info("Registering new user: {}", newUser.getUsername());
         return userRepository.saveAndFlush(newUser);
     }
 
-    private boolean isValidPassword(String password) {
-        String passwordPattern = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$";
-        return password.matches(passwordPattern);
-    }
-
-    // Updated method for managing user sessions using the SessionRepository
     @Transactional
     public void manageUserSessions(Long userId, String token) {
-        // Step 1: Query user_sessions for existing sessions for the user
-        try {
-            if (sessionRepository.existsByUserId(userId)) {
-                // Step 2: If a session exists, delete it from the table
-                sessionRepository.deleteByUserId(userId);
-                log.info("Existing session deleted for user ID: {}", userId);
-            }
-        } catch (Exception e) {
-            log.error("Error while managing sessions for user ID {}: {}", userId, e.getMessage());
-            throw new RuntimeException("Error managing sessions.");
+        if (sessionRepository.existsByUserId(userId)) {
+            sessionRepository.deleteByUserId(userId);
+            log.info("Existing session deleted for user ID: {}", userId);
         }
 
-        // Step 3: Insert a new session_id and timestamp into user_sessions
-        try {
-            UserSession userSession = new UserSession();
-            userSession.setUserId(userId);
-            userSession.setCreatedAt(LocalDateTime.now());
-            sessionRepository.save(userSession);
-            log.info("New session created for user ID: {}", userId);
-        } catch (Exception e) {
-            log.error("Error while creating new session for user ID {}: {}", userId, e.getMessage());
-            throw new RuntimeException("Session creation failed.");
-        }
+        UserSession userSession = new UserSession();
+        userSession.setUserId(userId);
+        userSession.setCreatedAt(LocalDateTime.now());
+        sessionRepository.save(userSession);
+        log.info("New session created for user ID: {}", userId);
     }
 
     @Transactional
@@ -183,32 +181,13 @@ public class UserService {
         return sessionExists;
     }
 
-    @Transactional
-    private void deleteExistingUserSessions(Long userId) {
-        try {
-            if (!sessionRepository.existsByUserId(userId)) {
-                log.warn("No sessions found for user ID {} to delete.", userId);
-                return;
-            }
-            sessionRepository.deleteByUserId(userId);
-            log.info("Deleted existing sessions for user ID: {}", userId);
-        } catch (Exception e) {
-            log.error("Error while deleting sessions for user ID {}: {}", userId, e.getMessage());
-            throw new RuntimeException("Session deletion failed.");
-        }
-    }
+    private static class OTPEntry {
+        String otp;
+        LocalDateTime expirationTime;
 
-    @Transactional
-    private void insertNewUserSession(Long userId) {
-        try {
-            UserSession userSession = new UserSession();
-            userSession.setUserId(userId);
-            userSession.setCreatedAt(LocalDateTime.now());
-            sessionRepository.save(userSession);
-            log.info("Inserted new session for user ID: {}", userId);
-        } catch (Exception e) {
-            log.error("Error while creating session for user ID {}: {}", userId, e.getMessage());
-            throw new RuntimeException("Session creation failed.");
+        OTPEntry(String otp, LocalDateTime expirationTime) {
+            this.otp = otp;
+            this.expirationTime = expirationTime;
         }
     }
 }

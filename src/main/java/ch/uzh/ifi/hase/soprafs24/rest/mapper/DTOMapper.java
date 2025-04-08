@@ -20,6 +20,10 @@ public interface DTOMapper {
     @Mapping(target = "profilePicture", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "lastLoginTime", ignore = true)  
+    @Mapping(target = "failedLoginAttempts", ignore = true)  
+    @Mapping(target = "lockoutUntil", ignore = true)  
+    @Mapping(source = "email", target = "email") // NEW: Ensure email is mapped
     User convertUserPostDTOtoEntity(UserPostDTO userPostDTO);
 
     @Mapping(source = "id", target = "id")
