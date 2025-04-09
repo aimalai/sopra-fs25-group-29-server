@@ -24,17 +24,6 @@ public class UserController {
         this.userService = userService;
     }
 
-    @GetMapping("")
-    @ResponseStatus(HttpStatus.OK)
-    public List<UserGetDTO> getAllUsers() {
-        List<User> users = userService.getUsers();
-        List<UserGetDTO> userGetDTOs = new ArrayList<>();
-        for (User user : users) {
-            userGetDTOs.add(DTOMapper.INSTANCE.convertEntityToUserGetDTO(user));
-        }
-        return userGetDTOs;
-    }
-
     @PostMapping("")
     @ResponseStatus(HttpStatus.CREATED)
     public UserGetDTO createUser(@RequestBody UserPostDTO userPostDTO) {
@@ -92,5 +81,22 @@ public class UserController {
     @ResponseStatus(HttpStatus.OK)
     public List<String> getWatchlist(@PathVariable Long userId) {
         return userService.getWatchlist(userId);
+    }
+
+    @GetMapping("")
+    @ResponseStatus(HttpStatus.OK)
+    public List<UserGetDTO> getAllUsers(@RequestParam(value = "username", required = false) String username) {
+        List<User> users;
+        if (username != null && !username.trim().isEmpty()) {
+            users = userService.getUsersByUsername(username);
+        } else {
+            users = userService.getUsers();
+        }
+
+        List<UserGetDTO> userGetDTOs = new ArrayList<>();
+        for (User user : users) {
+            userGetDTOs.add(DTOMapper.INSTANCE.convertEntityToUserGetDTO(user));
+        }
+        return userGetDTOs;
     }
 }

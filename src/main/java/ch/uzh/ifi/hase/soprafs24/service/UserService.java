@@ -112,4 +112,8 @@ public class UserService {
       return user.getWatchlist();
   }
 
+  public List<User> getUsersByUsername(String username) {
+    return userRepository.findByUsernameContaining(username);
+  }
+
 }
