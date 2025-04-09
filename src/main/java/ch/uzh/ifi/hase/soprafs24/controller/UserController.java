@@ -26,7 +26,6 @@ public class UserController {
 
     @GetMapping("")
     @ResponseStatus(HttpStatus.OK)
-    @ResponseBody
     public List<UserGetDTO> getAllUsers() {
         List<User> users = userService.getUsers();
         List<UserGetDTO> userGetDTOs = new ArrayList<>();
@@ -38,7 +37,6 @@ public class UserController {
 
     @PostMapping("")
     @ResponseStatus(HttpStatus.CREATED)
-    @ResponseBody
     public UserGetDTO createUser(@RequestBody UserPostDTO userPostDTO) {
         User userInput = DTOMapper.INSTANCE.convertUserPostDTOtoEntity(userPostDTO);
         User createdUser = userService.createUser(userInput);
@@ -47,7 +45,6 @@ public class UserController {
 
     @PostMapping("/login")
     @ResponseStatus(HttpStatus.OK)
-    @ResponseBody
     public UserGetDTO loginUser(@RequestBody UserPostDTO userPostDTO) {
         User userInput = DTOMapper.INSTANCE.convertUserPostDTOtoEntity(userPostDTO);
         User loggedInUser = userService.loginUser(userInput.getUsername(), userInput.getPassword());
@@ -59,7 +56,6 @@ public class UserController {
 
     @GetMapping("/{userId}")
     @ResponseStatus(HttpStatus.OK)
-    @ResponseBody
     public UserGetDTO getUserById(@PathVariable Long userId) {
         User user = userService.getUserById(userId);
         if (user == null) {
@@ -83,7 +79,6 @@ public class UserController {
 
     @PostMapping("/{userId}/watchlist")
     @ResponseStatus(HttpStatus.CREATED)
-    @ResponseBody
     public String addToWatchlist(@PathVariable Long userId, @RequestBody Map<String, String> payload) {
         String movieId = payload.get("movieId");
         if (movieId == null || movieId.trim().isEmpty()) {
@@ -95,7 +90,6 @@ public class UserController {
 
     @GetMapping("/{userId}/watchlist")
     @ResponseStatus(HttpStatus.OK)
-    @ResponseBody
     public List<String> getWatchlist(@PathVariable Long userId) {
         return userService.getWatchlist(userId);
     }

@@ -54,8 +54,8 @@ public class GlobalExceptionAdvice extends ResponseEntityExceptionHandler {
                 path,
                 System.currentTimeMillis()
         );
-        return new ResponseEntity<>(errorResponse, new HttpHeaders(), status);
-    }
+        return new ResponseEntity<>(errorResponse, status);
+    }    
 
     private ResponseEntity<Object> buildErrorResponse(Exception ex, HttpStatus status, HttpServletRequest request) {
         ErrorResponse errorResponse = new ErrorResponse(
