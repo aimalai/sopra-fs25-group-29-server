@@ -20,100 +20,100 @@ import java.util.UUID;
 @Transactional
 public class UserService {
 
-  private final Logger log = LoggerFactory.getLogger(UserService.class);
+    private final Logger log = LoggerFactory.getLogger(UserService.class);
 
-  private final UserRepository userRepository;
+    private final UserRepository userRepository;
 
-  @Autowired
-  public UserService(@Qualifier("userRepository") UserRepository userRepository) {
-    this.userRepository = userRepository;
-  }
-
-  public List<User> getUsers() {
-    return this.userRepository.findAll();
-  }
-
-  public User createUser(User newUser) {
-    newUser.setToken(UUID.randomUUID().toString());
-    newUser.setStatus(UserStatus.ONLINE);
-    checkIfUserExists(newUser);
-    newUser.setCreationDate(LocalDate.now());
-    newUser = userRepository.save(newUser);
-    userRepository.flush();
-
-    log.debug("Created Information for User: {}", newUser);
-    return newUser;
-  }
-
-  private void checkIfUserExists(User userToBeCreated) {
-    User userByUsername = userRepository.findByUsername(userToBeCreated.getUsername());
-    if (userByUsername != null) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already taken");
+    @Autowired
+    public UserService(@Qualifier("userRepository") UserRepository userRepository) {
+        this.userRepository = userRepository;
     }
-  }
 
-  public User loginUser(String username, String password) {
-    User user = userRepository.findByUsername(username);
-    if (user == null) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User does not exist.");
+    public List<User> getUsers() {
+        return this.userRepository.findAll();
     }
-    if (!user.getPassword().equals(password)) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Incorrect password.");
+
+    public User createUser(User newUser) {
+        newUser.setToken(UUID.randomUUID().toString());
+        newUser.setStatus(UserStatus.ONLINE);
+        checkIfUserExists(newUser);
+        newUser.setCreationDate(LocalDate.now());
+        newUser = userRepository.save(newUser);
+        userRepository.flush();
+
+        log.debug("Created Information for User: {}", newUser);
+        return newUser;
     }
-    user.setStatus(UserStatus.ONLINE);
-    userRepository.save(user);
-    return user;
-  }
 
-  public User getUserById(Long userId) {
-    return userRepository.findById(userId).orElse(null);
-  }
-
-  public void logoutUser(Long userId) {
-    User user = userRepository.findById(userId)
-        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-    user.setStatus(UserStatus.OFFLINE);
-    userRepository.save(user);
-  }
-
-  public void updateUser(Long userId, User userData) {
-    User existingUser = userRepository.findById(userId)
-        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-
-    if (userData.getUsername() != null && !userData.getUsername().isEmpty()) {
-      User userByUsername = userRepository.findByUsername(userData.getUsername());
-      if (userByUsername != null && !userByUsername.getId().equals(userId)) {
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username already taken");
-      }
-      existingUser.setUsername(userData.getUsername());
+    private void checkIfUserExists(User userToBeCreated) {
+        User userByUsername = userRepository.findByUsername(userToBeCreated.getUsername());
+        if (userByUsername != null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already taken");
+        }
     }
-    if (userData.getBirthday() != null) {
-      existingUser.setBirthday(userData.getBirthday());
-    }
-    userRepository.save(existingUser);
-  }
 
-  public void addMovieToWatchlist(Long userId, String movieId) {
-    User user = getUserById(userId);
-    if (user == null) {
-        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+    public User loginUser(String username, String password) {
+        User user = userRepository.findByUsername(username);
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User does not exist.");
+        }
+        if (!user.getPassword().equals(password)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Incorrect password.");
+        }
+        user.setStatus(UserStatus.ONLINE);
+        userRepository.save(user);
+        return user;
     }
-    if (!user.getWatchlist().contains(movieId)) {
-        user.getWatchlist().add(movieId);
+
+    public User getUserById(Long userId) {
+        return userRepository.findById(userId).orElse(null);
+    }
+
+    public void logoutUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        user.setStatus(UserStatus.OFFLINE);
         userRepository.save(user);
     }
-  }
 
-  public List<String> getWatchlist(Long userId) {
-      User user = getUserById(userId);
-      if (user == null) {
-          throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
-      }
-      return user.getWatchlist();
-  }
+    public void updateUser(Long userId, User userData) {
+        User existingUser = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
-  public List<User> getUsersByUsername(String username) {
-    return userRepository.findByUsernameContaining(username);
-  }
+        if (userData.getUsername() != null && !userData.getUsername().isEmpty()) {
+            User userByUsername = userRepository.findByUsername(userData.getUsername());
+            if (userByUsername != null && !userByUsername.getId().equals(userId)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username already taken");
+            }
+            existingUser.setUsername(userData.getUsername());
+        }
+        if (userData.getBirthday() != null) {
+            existingUser.setBirthday(userData.getBirthday());
+        }
+        userRepository.save(existingUser);
+    }
+
+    public void addMovieToWatchlist(Long userId, String movieId) {
+        User user = getUserById(userId);
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+        }
+        if (!user.getWatchlist().contains(movieId)) {
+            user.getWatchlist().add(movieId);
+            userRepository.save(user);
+        }
+    }
+
+    public List<String> getWatchlist(Long userId) {
+        User user = getUserById(userId);
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+        }
+        return user.getWatchlist();
+    }
+
+    public List<User> getUsersByUsername(String username) {
+        return userRepository.findByUsernameContaining(username);
+    }
 
 }

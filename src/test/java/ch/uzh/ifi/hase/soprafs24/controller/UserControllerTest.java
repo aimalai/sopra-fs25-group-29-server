@@ -55,11 +55,11 @@ public class UserControllerTest {
         mockMvc.perform(post("/users")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(asJsonString(userPostDTO)))
-            .andExpect(status().isCreated())
-            .andExpect(jsonPath("$.id", is(user.getId().intValue())))
-            .andExpect(jsonPath("$.password", is(user.getPassword())))
-            .andExpect(jsonPath("$.username", is(user.getUsername())))
-            .andExpect(jsonPath("$.status", is(user.getStatus().toString())));
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id", is(user.getId().intValue())))
+                .andExpect(jsonPath("$.password", is(user.getPassword())))
+                .andExpect(jsonPath("$.username", is(user.getUsername())))
+                .andExpect(jsonPath("$.status", is(user.getStatus().toString())));
     }
 
     @Test
@@ -70,12 +70,12 @@ public class UserControllerTest {
         userPostDTO.setUsername("existingUser");
         // mock the error
         Mockito.doThrow(new ResponseStatusException(HttpStatus.CONFLICT, "Username already exists"))
-            .when(userService).createUser(Mockito.any());
+                .when(userService).createUser(Mockito.any());
         // test if error
         mockMvc.perform(post("/users")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(asJsonString(userPostDTO)))
-            .andExpect(status().isConflict());
+                .andExpect(status().isConflict());
     }
 
     @Test
@@ -92,11 +92,11 @@ public class UserControllerTest {
 
         // compare
         mockMvc.perform(get("/users/1").contentType(MediaType.APPLICATION_JSON))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.id", is(user.getId().intValue())))
-            .andExpect(jsonPath("$.password", is(user.getPassword())))
-            .andExpect(jsonPath("$.username", is(user.getUsername())))
-            .andExpect(jsonPath("$.status", is(user.getStatus().toString())));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id", is(user.getId().intValue())))
+                .andExpect(jsonPath("$.password", is(user.getPassword())))
+                .andExpect(jsonPath("$.username", is(user.getUsername())))
+                .andExpect(jsonPath("$.status", is(user.getStatus().toString())));
     }
 
     @Test
@@ -106,7 +106,7 @@ public class UserControllerTest {
 
         // try to get user
         mockMvc.perform(get("/users/99").contentType(MediaType.APPLICATION_JSON))
-            .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -121,14 +121,14 @@ public class UserControllerTest {
         mockMvc.perform(put("/users/1")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(updateBody))
-            .andExpect(status().isNoContent());
+                .andExpect(status().isNoContent());
     }
 
     @Test
     public void updateUser_notFound() throws Exception {
-      // fake the error  
-      Mockito.doThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"))
-            .when(userService).updateUser(Mockito.eq(99L), Mockito.any());
+        // fake the error  
+        Mockito.doThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"))
+                .when(userService).updateUser(Mockito.eq(99L), Mockito.any());
 
         // set user
         String updateBody = "{\"username\": \"whatever\"}";
@@ -137,16 +137,15 @@ public class UserControllerTest {
         mockMvc.perform(put("/users/99")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(updateBody))
-            .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound());
     }
 
     private String asJsonString(final Object object) {
         try {
             return objectMapper.writeValueAsString(object);
-        } 
-        catch (JsonProcessingException e) {
+        } catch (JsonProcessingException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                String.format("The request body could not be created. %s", e.toString()));
+                    String.format("The request body could not be created. %s", e.toString()));
         }
     }
 }

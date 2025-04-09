@@ -21,7 +21,7 @@ public class GlobalExceptionAdvice extends ResponseEntityExceptionHandler {
 
     private final Logger log = LoggerFactory.getLogger(GlobalExceptionAdvice.class);
 
-    @ExceptionHandler({ IllegalArgumentException.class, IllegalStateException.class })
+    @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})
     protected ResponseEntity<Object> handleConflict(RuntimeException ex, WebRequest request) {
         return buildErrorResponse(ex, HttpStatus.CONFLICT, request);
     }
@@ -31,6 +31,7 @@ public class GlobalExceptionAdvice extends ResponseEntityExceptionHandler {
         log.error("Request: {} raised {}", request.getRequestURL(), ex);
         return buildErrorResponse(ex, HttpStatus.CONFLICT, request);
     }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleAllExceptions(Exception ex, HttpServletRequest request) {
         log.error("Unhandled Exception for request {}: {}", request.getRequestURL(), ex);
@@ -40,7 +41,6 @@ public class GlobalExceptionAdvice extends ResponseEntityExceptionHandler {
         }
         return buildErrorResponse(ex, HttpStatus.INTERNAL_SERVER_ERROR, request);
     }
-
 
     private ResponseEntity<Object> buildErrorResponse(Exception ex, HttpStatus status, WebRequest request) {
         String path = "";
@@ -55,7 +55,7 @@ public class GlobalExceptionAdvice extends ResponseEntityExceptionHandler {
                 System.currentTimeMillis()
         );
         return new ResponseEntity<>(errorResponse, status);
-    }    
+    }
 
     private ResponseEntity<Object> buildErrorResponse(Exception ex, HttpStatus status, HttpServletRequest request) {
         ErrorResponse errorResponse = new ErrorResponse(
