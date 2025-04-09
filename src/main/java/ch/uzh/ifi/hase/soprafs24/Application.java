@@ -29,7 +29,7 @@ public class Application {
           @Override
           public void addCorsMappings(CorsRegistry registry) {
               registry.addMapping("/**")
-                      .allowedOrigins("http://localhost:3000", "https://sopra-fs25-group-29-client.vercel.app/") // Updated to correct Vercel URL.
+                      .allowedOriginPatterns("*") // Updated to correct Vercel URL.
                       .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") 
                       .allowedHeaders("*")
                       .allowCredentials(true);
