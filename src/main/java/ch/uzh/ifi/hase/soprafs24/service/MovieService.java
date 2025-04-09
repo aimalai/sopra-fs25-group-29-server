@@ -7,7 +7,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import java.net.URLEncoder;
+import org.springframework.web.util.UriComponentsBuilder;
+
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 
@@ -21,14 +22,22 @@ public class MovieService {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public String searchMovies(String query) {
-        String url = "https://api.themoviedb.org/3/search/movie?api_key=" + apiKey
-                + "&query=" + URLEncoder.encode(query, StandardCharsets.UTF_8);
+        String url = UriComponentsBuilder
+                .fromUriString("https://api.themoviedb.org/3/search/movie")
+                .queryParam("api_key", apiKey)
+                .queryParam("query", query)
+                .encode(StandardCharsets.UTF_8)
+                .toUriString();
         return restTemplate.getForObject(url, String.class);
     }
 
     public String searchTV(String query) {
-        String url = "https://api.themoviedb.org/3/search/tv?api_key=" + apiKey
-                + "&query=" + URLEncoder.encode(query, StandardCharsets.UTF_8);
+        String url = UriComponentsBuilder
+                .fromUriString("https://api.themoviedb.org/3/search/tv")
+                .queryParam("api_key", apiKey)
+                .queryParam("query", query)
+                .encode(StandardCharsets.UTF_8)
+                .toUriString();
         return restTemplate.getForObject(url, String.class);
     }
 
@@ -62,8 +71,20 @@ public class MovieService {
     }
 
     public String getMovieDetails(String id) {
-        String detailsUrl = "https://api.themoviedb.org/3/movie/" + id + "?api_key=" + apiKey;
-        String creditsUrl = "https://api.themoviedb.org/3/movie/" + id + "/credits?api_key=" + apiKey;
+        String detailsUrl = UriComponentsBuilder
+                .fromUriString("https://api.themoviedb.org/3/movie/{id}")
+                .queryParam("api_key", apiKey)
+                .buildAndExpand(id)
+                .encode(StandardCharsets.UTF_8)
+                .toUriString();
+
+        String creditsUrl = UriComponentsBuilder
+                .fromUriString("https://api.themoviedb.org/3/movie/{id}/credits")
+                .queryParam("api_key", apiKey)
+                .buildAndExpand(id)
+                .encode(StandardCharsets.UTF_8)
+                .toUriString();
+
         try {
             String detailsResponse = restTemplate.getForObject(detailsUrl, String.class);
             String creditsResponse = restTemplate.getForObject(creditsUrl, String.class);
@@ -124,8 +145,20 @@ public class MovieService {
     }
 
     public String getTVDetails(String id) {
-        String detailsUrl = "https://api.themoviedb.org/3/tv/" + id + "?api_key=" + apiKey;
-        String creditsUrl = "https://api.themoviedb.org/3/tv/" + id + "/credits?api_key=" + apiKey;
+        String detailsUrl = UriComponentsBuilder
+                .fromUriString("https://api.themoviedb.org/3/tv/{id}")
+                .queryParam("api_key", apiKey)
+                .buildAndExpand(id)
+                .encode(StandardCharsets.UTF_8)
+                .toUriString();
+
+        String creditsUrl = UriComponentsBuilder
+                .fromUriString("https://api.themoviedb.org/3/tv/{id}/credits")
+                .queryParam("api_key", apiKey)
+                .buildAndExpand(id)
+                .encode(StandardCharsets.UTF_8)
+                .toUriString();
+
         try {
             String detailsResponse = restTemplate.getForObject(detailsUrl, String.class);
             String creditsResponse = restTemplate.getForObject(creditsUrl, String.class);
@@ -184,5 +217,4 @@ public class MovieService {
             throw new RuntimeException("Error fetching TV details", e);
         }
     }
-    
 }
