@@ -3,6 +3,7 @@ package ch.uzh.ifi.hase.soprafs24.service;
 import ch.uzh.ifi.hase.soprafs24.constant.UserStatus;
 import ch.uzh.ifi.hase.soprafs24.entity.User;
 import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -21,8 +23,8 @@ import java.util.UUID;
 public class UserService {
 
     private final Logger log = LoggerFactory.getLogger(UserService.class);
-
     private final UserRepository userRepository;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Autowired
     public UserService(@Qualifier("userRepository") UserRepository userRepository) {
@@ -110,6 +112,25 @@ public class UserService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
         }
         return user.getWatchlist();
+    }
+
+    public void removeMovieFromWatchlist(Long userId, String movieId) {
+        User user = getUserById(userId);
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+        }
+
+        List<String> watchlist = user.getWatchlist();
+        watchlist.removeIf(entry -> {
+            try {
+                Map<?, ?> parsed = objectMapper.readValue(entry, Map.class);
+                return movieId.equals(parsed.get("movieId"));
+            } catch (Exception e) {
+                return false;
+            }
+        });
+
+        userRepository.save(user);
     }
 
     public List<User> getUsersByUsername(String username) {

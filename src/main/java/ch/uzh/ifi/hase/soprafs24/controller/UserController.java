@@ -92,6 +92,12 @@ public class UserController {
         return userService.getWatchlist(userId);
     }
 
+    @DeleteMapping("/{userId}/watchlist/{movieId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void removeFromWatchlist(@PathVariable Long userId, @PathVariable String movieId) {
+        userService.removeMovieFromWatchlist(userId, movieId);
+    }
+
     @GetMapping("")
     @ResponseStatus(HttpStatus.OK)
     public List<UserGetDTO> getAllUsers(@RequestParam(value = "username", required = false) String username) {
