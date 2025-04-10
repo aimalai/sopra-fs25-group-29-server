@@ -93,13 +93,13 @@ public class UserService {
         userRepository.save(existingUser);
     }
 
-    public void addMovieToWatchlist(Long userId, String movieId) {
+    public void addMovieToWatchlist(Long userId, String jsonString) {
         User user = getUserById(userId);
         if (user == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
         }
-        if (!user.getWatchlist().contains(movieId)) {
-            user.getWatchlist().add(movieId);
+        if (!user.getWatchlist().contains(jsonString)) {
+            user.getWatchlist().add(jsonString);
             userRepository.save(user);
         }
     }
@@ -115,5 +115,4 @@ public class UserService {
     public List<User> getUsersByUsername(String username) {
         return userRepository.findByUsernameContaining(username);
     }
-
 }

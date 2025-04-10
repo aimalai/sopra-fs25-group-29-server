@@ -10,7 +10,12 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.Iterator;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 @Service
 public class MovieService {
@@ -41,7 +46,7 @@ public class MovieService {
         return restTemplate.getForObject(url, String.class);
     }
 
-    public String searchCombined(String query) {
+    public String searchCombined(String query, String sort) {
         try {
             String movieResponse = searchMovies(query);
             String tvResponse = searchTV(query);
@@ -61,8 +66,16 @@ public class MovieService {
             combined.addAll(movieResults);
             combined.addAll(tvResults);
 
+            List<JsonNode> sorted = StreamSupport.stream(combined.spliterator(), false)
+                    .sorted(getComparator(sort))
+                    .collect(Collectors.toList());
+
+            ArrayNode sortedArray = objectMapper.createArrayNode();
+            sortedArray.addAll(sorted);
+
             ObjectNode combinedNode = objectMapper.createObjectNode();
-            combinedNode.set("results", combined);
+            combinedNode.set("results", sortedArray);
+            combinedNode.put("totalCount", sortedArray.size());
 
             return combinedNode.toString();
         } catch (Exception e) {
@@ -70,7 +83,39 @@ public class MovieService {
         }
     }
 
-    public String getMovieDetails(String id) {
+    private Comparator<JsonNode> getComparator(String sort) {
+        if (sort == null) return Comparator.comparingInt(a -> 0);
+        return switch (sort) {
+            case "popularity" -> Comparator.comparingDouble(a -> -a.path("popularity").asDouble());
+            case "rating" -> Comparator.comparingDouble(a -> -a.path("vote_average").asDouble());
+            case "newest" -> Comparator.comparing(this::extractDate).reversed();
+            case "oldest" -> Comparator.comparing(this::extractDate);
+            default -> Comparator.comparingInt(a -> 0);
+        };
+    }
+
+    private LocalDate extractDate(JsonNode node) {
+        String dateStr = node.has("release_date") && !node.get("release_date").asText().isEmpty()
+                ? node.get("release_date").asText()
+                : node.has("first_air_date") ? node.get("first_air_date").asText() : "";
+        try {
+            return LocalDate.parse(dateStr);
+        } catch (Exception e) {
+            return LocalDate.MIN;
+        }
+    }
+
+    public String getMediaDetails(String id, String mediaType) {
+        if ("movie".equalsIgnoreCase(mediaType)) {
+            return getMovieDetails(id);
+        } else if ("tv".equalsIgnoreCase(mediaType)) {
+            return getTVDetails(id);
+        } else {
+            throw new IllegalArgumentException("Invalid media type");
+        }
+    }
+
+    private String getMovieDetails(String id) {
         String detailsUrl = UriComponentsBuilder
                 .fromUriString("https://api.themoviedb.org/3/movie/{id}")
                 .queryParam("api_key", apiKey)
@@ -85,66 +130,10 @@ public class MovieService {
                 .encode(StandardCharsets.UTF_8)
                 .toUriString();
 
-        try {
-            String detailsResponse = restTemplate.getForObject(detailsUrl, String.class);
-            String creditsResponse = restTemplate.getForObject(creditsUrl, String.class);
-            JsonNode detailsNode = objectMapper.readTree(detailsResponse);
-            JsonNode creditsNode = objectMapper.readTree(creditsResponse);
-            StringBuilder castBuilder = new StringBuilder();
-            JsonNode castArray = creditsNode.get("cast");
-            if (castArray != null && castArray.isArray()) {
-                int count = 0;
-                Iterator<JsonNode> it = castArray.elements();
-                while (it.hasNext() && count < 5) {
-                    JsonNode actor = it.next();
-                    String name = actor.get("name").asText();
-                    if (castBuilder.length() > 0) {
-                        castBuilder.append(", ");
-                    }
-                    castBuilder.append(name);
-                    count++;
-                }
-            }
-            String cast = castBuilder.toString();
-            StringBuilder genreBuilder = new StringBuilder();
-            JsonNode genresArray = detailsNode.get("genres");
-            if (genresArray != null && genresArray.isArray()) {
-                Iterator<JsonNode> it = genresArray.elements();
-                while (it.hasNext()) {
-                    JsonNode genreNode = it.next();
-                    String genreName = genreNode.get("name").asText();
-                    if (genreBuilder.length() > 0) {
-                        genreBuilder.append(", ");
-                    }
-                    genreBuilder.append(genreName);
-                }
-            }
-            String genre = genreBuilder.toString();
-            String title = detailsNode.get("title").asText();
-            String description = detailsNode.get("overview").asText();
-            double ratings = detailsNode.get("vote_average").asDouble();
-            int voteCount = detailsNode.get("vote_count").asInt();
-            String releaseDate = detailsNode.get("release_date").asText();
-            String posterPath = detailsNode.get("poster_path").asText();
-            StringBuilder result = new StringBuilder();
-            result.append("{");
-            result.append("\"id\":").append(id).append(",");
-            result.append("\"title\":\"").append(title).append("\",");
-            result.append("\"description\":\"").append(description.replace("\"", "\\\"")).append("\",");
-            result.append("\"ratings\":").append(ratings).append(",");
-            result.append("\"vote_count\":").append(voteCount).append(",");
-            result.append("\"release_date\":\"").append(releaseDate).append("\",");
-            result.append("\"poster_path\":\"").append(posterPath).append("\",");
-            result.append("\"genre\":\"").append(genre).append("\",");
-            result.append("\"cast\":\"").append(cast).append("\"");
-            result.append("}");
-            return result.toString();
-        } catch (Exception e) {
-            throw new RuntimeException("Error fetching movie details", e);
-        }
+        return buildDetailsResponse(detailsUrl, creditsUrl, true);
     }
 
-    public String getTVDetails(String id) {
+    private String getTVDetails(String id) {
         String detailsUrl = UriComponentsBuilder
                 .fromUriString("https://api.themoviedb.org/3/tv/{id}")
                 .queryParam("api_key", apiKey)
@@ -159,11 +148,16 @@ public class MovieService {
                 .encode(StandardCharsets.UTF_8)
                 .toUriString();
 
+        return buildDetailsResponse(detailsUrl, creditsUrl, false);
+    }
+
+    private String buildDetailsResponse(String detailsUrl, String creditsUrl, boolean isMovie) {
         try {
             String detailsResponse = restTemplate.getForObject(detailsUrl, String.class);
             String creditsResponse = restTemplate.getForObject(creditsUrl, String.class);
             JsonNode detailsNode = objectMapper.readTree(detailsResponse);
             JsonNode creditsNode = objectMapper.readTree(creditsResponse);
+
             StringBuilder castBuilder = new StringBuilder();
             JsonNode castArray = creditsNode.get("cast");
             if (castArray != null && castArray.isArray()) {
@@ -179,7 +173,7 @@ public class MovieService {
                     count++;
                 }
             }
-            String cast = castBuilder.toString();
+
             StringBuilder genreBuilder = new StringBuilder();
             JsonNode genresArray = detailsNode.get("genres");
             if (genresArray != null && genresArray.isArray()) {
@@ -193,28 +187,31 @@ public class MovieService {
                     genreBuilder.append(genreName);
                 }
             }
-            String genre = genreBuilder.toString();
-            String title = detailsNode.get("name").asText();
+
+            String title = isMovie ? detailsNode.get("title").asText() : detailsNode.get("name").asText();
             String description = detailsNode.get("overview").asText();
             double ratings = detailsNode.get("vote_average").asDouble();
             int voteCount = detailsNode.get("vote_count").asInt();
-            String releaseDate = detailsNode.get("first_air_date").asText();
+            String releaseDate = isMovie
+                    ? detailsNode.get("release_date").asText()
+                    : detailsNode.get("first_air_date").asText();
             String posterPath = detailsNode.get("poster_path").asText();
-            StringBuilder result = new StringBuilder();
-            result.append("{");
-            result.append("\"id\":").append(id).append(",");
-            result.append("\"title\":\"").append(title).append("\",");
-            result.append("\"description\":\"").append(description.replace("\"", "\\\"")).append("\",");
-            result.append("\"ratings\":").append(ratings).append(",");
-            result.append("\"vote_count\":").append(voteCount).append(",");
-            result.append("\"release_date\":\"").append(releaseDate).append("\",");
-            result.append("\"poster_path\":\"").append(posterPath).append("\",");
-            result.append("\"genre\":\"").append(genre).append("\",");
-            result.append("\"cast\":\"").append(cast).append("\"");
-            result.append("}");
-            return result.toString();
+
+            return String.format(
+                    "{\"id\":%s,\"title\":\"%s\",\"description\":\"%s\",\"ratings\":%.1f,\"vote_count\":%d," +
+                            "\"release_date\":\"%s\",\"poster_path\":\"%s\",\"genre\":\"%s\",\"cast\":\"%s\"}",
+                    detailsNode.get("id").asText(),
+                    title,
+                    description.replace("\"", "\\\""),
+                    ratings,
+                    voteCount,
+                    releaseDate,
+                    posterPath,
+                    genreBuilder.toString(),
+                    castBuilder.toString()
+            );
         } catch (Exception e) {
-            throw new RuntimeException("Error fetching TV details", e);
+            throw new RuntimeException("Error fetching details", e);
         }
     }
 }

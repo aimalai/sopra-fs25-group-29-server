@@ -70,10 +70,19 @@ public class UserController {
     @ResponseStatus(HttpStatus.CREATED)
     public String addToWatchlist(@PathVariable Long userId, @RequestBody Map<String, String> payload) {
         String movieId = payload.get("movieId");
+        String title = payload.get("title");
+        String posterPath = payload.get("posterPath");
+
         if (movieId == null || movieId.trim().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "movieId is required");
         }
-        userService.addMovieToWatchlist(userId, movieId);
+
+        String json = String.format("{\"movieId\":\"%s\",\"title\":\"%s\",\"posterPath\":\"%s\"}",
+                movieId,
+                title != null ? title : "",
+                posterPath != null ? posterPath : "");
+
+        userService.addMovieToWatchlist(userId, json);
         return "{\"message\": \"Movie added to watchlist\"}";
     }
 
