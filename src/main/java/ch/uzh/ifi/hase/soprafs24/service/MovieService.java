@@ -46,7 +46,7 @@ public class MovieService {
         return restTemplate.getForObject(url, String.class);
     }
 
-    public String searchCombined(String query, String sort) {
+    public String searchCombined(String query, String sort, boolean onlyComplete, int page, int pageSize) {
         try {
             String movieResponse = searchMovies(query);
             String tvResponse = searchTV(query);
@@ -66,18 +66,29 @@ public class MovieService {
             combined.addAll(movieResults);
             combined.addAll(tvResults);
 
-            List<JsonNode> sorted = StreamSupport.stream(combined.spliterator(), false)
+            List<JsonNode> filteredSorted = StreamSupport.stream(combined.spliterator(), false)
+                    .filter(r -> !onlyComplete || (
+                            r.hasNonNull("poster_path") && !r.get("poster_path").asText().isEmpty() &&
+                            ((r.hasNonNull("release_date") && !r.get("release_date").asText().isEmpty()) ||
+                             (r.hasNonNull("first_air_date") && !r.get("first_air_date").asText().isEmpty())) &&
+                            r.hasNonNull("overview") && !r.get("overview").asText().isEmpty()
+                    ))
                     .sorted(getComparator(sort))
                     .collect(Collectors.toList());
 
-            ArrayNode sortedArray = objectMapper.createArrayNode();
-            sortedArray.addAll(sorted);
+            int totalCount = filteredSorted.size();
+            int fromIndex = Math.min((page - 1) * pageSize, totalCount);
+            int toIndex = Math.min(fromIndex + pageSize, totalCount);
+            List<JsonNode> paginatedResults = filteredSorted.subList(fromIndex, toIndex);
 
-            ObjectNode combinedNode = objectMapper.createObjectNode();
-            combinedNode.set("results", sortedArray);
-            combinedNode.put("totalCount", sortedArray.size());
+            ArrayNode paginatedArray = objectMapper.createArrayNode();
+            paginatedArray.addAll(paginatedResults);
 
-            return combinedNode.toString();
+            ObjectNode responseNode = objectMapper.createObjectNode();
+            responseNode.set("results", paginatedArray);
+            responseNode.put("totalCount", totalCount);
+
+            return responseNode.toString();
         } catch (Exception e) {
             throw new RuntimeException("Error combining search results", e);
         }

@@ -16,8 +16,11 @@ public class MovieController {
 
     @GetMapping("/search")
     public ResponseEntity<String> searchMovies(@RequestParam String query,
-                                               @RequestParam(required = false) String sort) {
-        String response = movieService.searchCombined(query, sort);
+                                               @RequestParam(required = false) String sort,
+                                               @RequestParam(required = false, defaultValue = "false") boolean onlyComplete,
+                                               @RequestParam(required = false, defaultValue = "1") int page,
+                                               @RequestParam(required = false, defaultValue = "5") int pageSize) {
+        String response = movieService.searchCombined(query, sort, onlyComplete, page, pageSize);
         return ResponseEntity.ok(response);
     }
 
