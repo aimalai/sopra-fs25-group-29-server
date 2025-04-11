@@ -27,14 +27,24 @@ public interface DTOMapper {
         @Mapping(source = "status", target = "status"),
         @Mapping(source = "creationDate", target = "creationDate"),
         @Mapping(source = "birthday", target = "birthday"),
-        @Mapping(source = "token", target = "token")
+        @Mapping(source = "token", target = "token"),
+        @Mapping(source = "email", target = "email"),
+        @Mapping(source = "biography", target = "biography"),
+        @Mapping(source = "sharable", target = "sharable"),
+        @Mapping(source = "publicRatings", target = "publicRatings"),
+        @Mapping(source = "profilePictureUrl", target = "profilePictureUrl")
     })
     UserGetDTO convertEntityToUserGetDTO(User user);
 
     @Mappings({
         @Mapping(source = "username", target = "username"),
         @Mapping(source = "password", target = "password"),
-        @Mapping(source = "birthday", target = "birthday")
+        @Mapping(source = "birthday", target = "birthday"),
+        @Mapping(source = "email", target = "email"),
+        @Mapping(source = "biography", target = "biography"),
+        @Mapping(source = "sharable", target = "sharable"),
+        @Mapping(source = "publicRatings", target = "publicRatings"),
+        @Mapping(source = "profilePictureUrl", target = "profilePictureUrl")
     })
     User convertUserUpdateDTOtoEntity(UserUpdateDTO userUpdateDTO);
 }

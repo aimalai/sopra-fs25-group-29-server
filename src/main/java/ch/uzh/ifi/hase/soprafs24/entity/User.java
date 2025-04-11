@@ -36,6 +36,21 @@ public class User implements Serializable {
     @Column
     private LocalDate birthday;
 
+    @Column
+    private String email;
+
+    @Column(length = 1000)
+    private String biography;
+
+    @Column
+    private boolean sharable;
+
+    @Column
+    private boolean publicRatings;
+
+    @Column
+    private String profilePictureUrl;
+
     @ElementCollection(fetch = FetchType.EAGER)
     private List<String> watchlist = new ArrayList<>();
 
@@ -112,5 +127,45 @@ public class User implements Serializable {
 
     public void setWatchlist(List<String> watchlist) {
         this.watchlist = watchlist;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getBiography() {
+        return biography;
+    }
+
+    public void setBiography(String biography) {
+        this.biography = biography;
+    }
+
+    public boolean isSharable() {
+        return sharable;
+    }
+
+    public void setSharable(boolean sharable) {
+        this.sharable = sharable;
+    }
+
+    public boolean isPublicRatings() {
+        return publicRatings;
+    }
+
+    public void setPublicRatings(boolean publicRatings) {
+        this.publicRatings = publicRatings;
+    }
+
+    public String getProfilePictureUrl() {
+        return profilePictureUrl;
+    }
+
+    public void setProfilePictureUrl(String profilePictureUrl) {
+        this.profilePictureUrl = profilePictureUrl;
     }
 }

@@ -89,9 +89,35 @@ public class UserService {
             }
             existingUser.setUsername(userData.getUsername());
         }
+
+        if (userData.getPassword() != null) {
+            existingUser.setPassword(userData.getPassword());
+        }
+
         if (userData.getBirthday() != null) {
             existingUser.setBirthday(userData.getBirthday());
         }
+
+        if (userData.getEmail() != null) {
+            existingUser.setEmail(userData.getEmail());
+        }
+
+        if (userData.getBiography() != null) {
+            existingUser.setBiography(userData.getBiography());
+        }
+
+        if (userData.getProfilePictureUrl() != null) {
+            existingUser.setProfilePictureUrl(userData.getProfilePictureUrl());
+        }
+
+        if (userData.isSharable() != existingUser.isSharable()) {
+            existingUser.setSharable(userData.isSharable());
+        }
+
+        if (userData.isPublicRatings() != existingUser.isPublicRatings()) {
+            existingUser.setPublicRatings(userData.isPublicRatings());
+        }
+
         userRepository.save(existingUser);
     }
 
