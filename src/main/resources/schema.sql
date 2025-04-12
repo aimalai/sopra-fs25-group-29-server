@@ -17,3 +17,12 @@ CREATE TABLE user_sessions (
     user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE invites (
+    id SERIAL PRIMARY KEY,
+    watch_party_id INT NOT NULL,
+    username VARCHAR(255) NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending', -- Can be 'pending', 'accepted', or 'declined'
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (watch_party_id) REFERENCES watch_parties(id) ON DELETE CASCADE
+);
