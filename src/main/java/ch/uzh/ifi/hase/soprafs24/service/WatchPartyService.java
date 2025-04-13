@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 @Service
@@ -21,7 +23,9 @@ public class WatchPartyService {
     }
 
     public WatchParty createWatchParty(User organizer, String title, String contentLink, String description, LocalDateTime scheduledTime) {
-        if (scheduledTime.isBefore(LocalDateTime.now())) {
+        ZonedDateTime scheduledTimeUTC = scheduledTime.atZone(ZoneId.of("UTC"));
+        ZonedDateTime scheduledTimeLocal = scheduledTimeUTC.withZoneSameInstant(ZoneId.systemDefault());
+        if (scheduledTimeLocal.isBefore(ZonedDateTime.now(ZoneId.systemDefault()))) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Scheduled time must be in the future.");
         }
         
