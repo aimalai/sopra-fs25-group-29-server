@@ -17,6 +17,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.ArrayList;
 
 @Service
 @Transactional
@@ -161,5 +162,77 @@ public class UserService {
 
     public List<User> getUsersByUsername(String username) {
         return userRepository.findByUsernameContaining(username);
+    }
+
+    public void sendFriendRequest(Long targetUserId, Long fromUserId) {
+        User targetUser = getUserById(targetUserId);
+        if (targetUser == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Target user not found");
+        }
+        if (targetUser.getIncomingFriendRequests().contains(fromUserId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Friend request already sent");
+        }
+        if (targetUser.getFriends().contains(fromUserId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Users are already friends");
+        }
+        targetUser.getIncomingFriendRequests().add(fromUserId);
+        userRepository.save(targetUser);
+    }
+
+    public void acceptFriendRequest(Long targetUserId, Long fromUserId) {
+        User targetUser = getUserById(targetUserId);
+        if (targetUser == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Target user not found");
+        }
+        if (!targetUser.getIncomingFriendRequests().contains(fromUserId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No friend request from this user");
+        }
+        targetUser.getIncomingFriendRequests().remove(fromUserId);
+        if (!targetUser.getFriends().contains(fromUserId)) {
+            targetUser.getFriends().add(fromUserId);
+        }
+        userRepository.save(targetUser);
+
+        User sender = getUserById(fromUserId);
+        if (sender != null && !sender.getFriends().contains(targetUserId)) {
+            sender.getFriends().add(targetUserId);
+            userRepository.save(sender);
+        }
+    }
+
+    public void declineFriendRequest(Long targetUserId, Long fromUserId) {
+        User targetUser = getUserById(targetUserId);
+        if (targetUser == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Target user not found");
+        }
+        if (targetUser.getIncomingFriendRequests().contains(fromUserId)) {
+            targetUser.getIncomingFriendRequests().remove(fromUserId);
+            userRepository.save(targetUser);
+        } else {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No friend request from this user");
+        }
+    }
+
+    public List<Long> getFriendRequests(Long userId) {
+        User user = getUserById(userId);
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+        }
+        return new ArrayList<>(user.getIncomingFriendRequests());
+    }
+
+    public List<User> getFriends(Long userId) {
+        User user = getUserById(userId);
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+        }
+        List<User> friendsList = new ArrayList<>();
+        for (Long friendId : user.getFriends()) {
+            User friend = getUserById(friendId);
+            if (friend != null) {
+                friendsList.add(friend);
+            }
+        }
+        return friendsList;
     }
 }

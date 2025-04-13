@@ -114,4 +114,46 @@ public class UserController {
         }
         return userGetDTOs;
     }
+
+    @PostMapping("/{userId}/friendrequests")
+    @ResponseStatus(HttpStatus.CREATED)
+    public String sendFriendRequest(@PathVariable Long userId, @RequestBody Map<String, String> payload) {
+        String fromUserIdStr = payload.get("fromUserId");
+        if (fromUserIdStr == null || fromUserIdStr.trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "fromUserId is required");
+        }
+        Long fromUserId = Long.parseLong(fromUserIdStr);
+        userService.sendFriendRequest(userId, fromUserId);
+        return "{\"message\": \"Friend request sent\"}";
+    }
+
+    @PutMapping("/{userId}/friendrequests/{fromUserId}/accept")
+    @ResponseStatus(HttpStatus.OK)
+    public String acceptFriendRequest(@PathVariable Long userId, @PathVariable Long fromUserId) {
+        userService.acceptFriendRequest(userId, fromUserId);
+        return "{\"message\": \"Friend request accepted\"}";
+    }
+
+    @DeleteMapping("/{userId}/friendrequests/{fromUserId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void declineFriendRequest(@PathVariable Long userId, @PathVariable Long fromUserId) {
+        userService.declineFriendRequest(userId, fromUserId);
+    }
+
+    @GetMapping("/{userId}/friendrequests")
+    @ResponseStatus(HttpStatus.OK)
+    public List<Long> getFriendRequests(@PathVariable Long userId) {
+        return userService.getFriendRequests(userId);
+    }
+
+    @GetMapping("/{userId}/friends")
+    @ResponseStatus(HttpStatus.OK)
+    public List<UserGetDTO> getFriends(@PathVariable Long userId) {
+        List<User> friends = userService.getFriends(userId);
+        List<UserGetDTO> friendDTOs = new ArrayList<>();
+        for (User friend : friends) {
+            friendDTOs.add(DTOMapper.INSTANCE.convertEntityToUserGetDTO(friend));
+        }
+        return friendDTOs;
+    }
 }

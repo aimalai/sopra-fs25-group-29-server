@@ -7,6 +7,12 @@ import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import javax.persistence.CollectionTable;
+import javax.persistence.Column;
+import javax.persistence.ElementCollection;
+import javax.persistence.JoinColumn;
+import java.util.Set;
+import java.util.HashSet;
 
 @Entity
 @Table(name = "USER")
@@ -53,6 +59,16 @@ public class User implements Serializable {
 
     @ElementCollection(fetch = FetchType.EAGER)
     private List<String> watchlist = new ArrayList<>();
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "incoming_friend_requests", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "friend_id")
+    private Set<Long> incomingFriendRequests = new HashSet<>();
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "friends", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "friend_id")
+    private Set<Long> friends = new HashSet<>();
 
     public User() {
         this.creationDate = LocalDate.now();
@@ -167,5 +183,21 @@ public class User implements Serializable {
 
     public void setProfilePictureUrl(String profilePictureUrl) {
         this.profilePictureUrl = profilePictureUrl;
+    }
+
+    public Set<Long> getIncomingFriendRequests() {
+        return incomingFriendRequests;
+    }
+
+    public void setIncomingFriendRequests(Set<Long> incomingFriendRequests) {
+        this.incomingFriendRequests = incomingFriendRequests;
+    }
+
+    public Set<Long> getFriends() {
+        return friends;
+    }
+
+    public void setFriends(Set<Long> friends) {
+        this.friends = friends;
     }
 }
