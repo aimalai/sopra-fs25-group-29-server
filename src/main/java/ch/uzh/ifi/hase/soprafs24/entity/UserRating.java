@@ -1,7 +1,6 @@
 package ch.uzh.ifi.hase.soprafs24.entity;
 
 import javax.persistence.*;
-import java.util.Objects;
 
 @Entity
 @Table(name = "user_ratings")
@@ -15,18 +14,26 @@ public class UserRating {
     private String userId;
 
     @Column(nullable = false)
+    private String username;
+
+    @Column(nullable = false)
     private String movieId;
 
     @Column(nullable = false)
     private double rating;
 
+    @Column(length = 200)
+    private String comment;
+
     public UserRating() {
     }
 
-    public UserRating(String userId, String movieId, double rating) {
+    public UserRating(String userId, String username, String movieId, double rating, String comment) {
         this.userId = userId;
+        this.username = username;
         this.movieId = movieId;
         this.rating = rating;
+        this.comment = comment;
     }
 
     public Long getId() {
@@ -44,7 +51,12 @@ public class UserRating {
     public void setUserId(String userId) {
         this.userId = userId;
     }
-
+    public String getUsername() {
+        return username;
+    }
+    public void setUsername(String username) {
+        this.username = username;
+    }
     public String getMovieId() {
         return movieId;
     }
@@ -60,20 +72,10 @@ public class UserRating {
     public void setRating(double rating) {
         this.rating = rating;
     }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof UserRating)) return false;
-        UserRating that = (UserRating) o;
-        return Double.compare(that.rating, rating) == 0 &&
-                Objects.equals(id, that.id) &&
-                Objects.equals(userId, that.userId) &&
-                Objects.equals(movieId, that.movieId);
+    public String getComment() {
+        return comment;
     }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, userId, movieId, rating);
+    public void setComment(String comment) {
+        this.comment = comment;
     }
 }

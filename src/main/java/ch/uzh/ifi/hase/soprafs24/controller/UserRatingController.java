@@ -5,10 +5,10 @@ import ch.uzh.ifi.hase.soprafs24.service.UserRatingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api")
@@ -39,7 +39,13 @@ public class UserRatingController {
             @PathVariable String userId,
             @RequestBody UserRatingRequest request
     ) {
-        UserRating userRating = userRatingService.createOrUpdateUserRating(userId, request.getMovieId(), request.getRating());
+        UserRating userRating = userRatingService.createOrUpdateUserRating(
+                userId,
+                request.getUsername(),
+                request.getMovieId(),
+                request.getRating(),
+                request.getComment()
+        );
         return ResponseEntity.ok(userRating);
     }
 
@@ -55,24 +61,41 @@ public class UserRatingController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/movies/{movieId}/ratings")
+    public ResponseEntity<List<UserRating>> getAllRatings(@PathVariable String movieId) {
+        List<UserRating> ratings = userRatingService.getRatingsForMovie(movieId);
+        return ResponseEntity.ok(ratings);
+    }
+
     public static class UserRatingRequest {
         private String movieId;
         private double rating;
+        private String comment;
+        private String username;
 
         public String getMovieId() {
             return movieId;
         }
-
         public void setMovieId(String movieId) {
             this.movieId = movieId;
         }
-
         public double getRating() {
             return rating;
         }
-
         public void setRating(double rating) {
             this.rating = rating;
+        }
+        public String getComment() {
+            return comment;
+        }
+        public void setComment(String comment) {
+            this.comment = comment;
+        }
+        public String getUsername() {
+            return username;
+        }
+        public void setUsername(String username) {
+            this.username = username;
         }
     }
 }

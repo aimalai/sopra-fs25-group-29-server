@@ -22,14 +22,16 @@ public class UserRatingService {
         return userRatingRepository.findByUserIdAndMovieId(userId, movieId);
     }
 
-    public UserRating createOrUpdateUserRating(String userId, String movieId, double rating) {
+    public UserRating createOrUpdateUserRating(String userId, String username, String movieId, double rating, String comment) {
         Optional<UserRating> existingRating = userRatingRepository.findByUserIdAndMovieId(userId, movieId);
         if (existingRating.isPresent()) {
             UserRating userRating = existingRating.get();
             userRating.setRating(rating);
+            userRating.setComment(comment);
+            userRating.setUsername(username);
             return userRatingRepository.save(userRating);
         } else {
-            UserRating newRating = new UserRating(userId, movieId, rating);
+            UserRating newRating = new UserRating(userId, username, movieId, rating, comment);
             return userRatingRepository.save(newRating);
         }
     }
@@ -45,5 +47,9 @@ public class UserRatingService {
 
     public long getTotalRatingsForMovie(String movieId) {
         return userRatingRepository.findByMovieId(movieId).size();
+    }
+
+    public List<UserRating> getRatingsForMovie(String movieId) {
+        return userRatingRepository.findByMovieId(movieId);
     }
 }
