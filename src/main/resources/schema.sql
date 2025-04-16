@@ -24,5 +24,6 @@ CREATE TABLE invites (
     username VARCHAR(255) NOT NULL,
     status VARCHAR(20) DEFAULT 'pending', -- Can be 'pending', 'accepted', or 'declined'
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- 🔥 Added for tracking real-time updates
     FOREIGN KEY (watch_party_id) REFERENCES watch_parties(id) ON DELETE CASCADE
 );

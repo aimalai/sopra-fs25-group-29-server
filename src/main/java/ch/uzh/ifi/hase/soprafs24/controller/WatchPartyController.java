@@ -78,11 +78,11 @@ public class WatchPartyController {
         @RequestParam String username,
         @RequestParam Long inviterId) {
 
-    String responseMessage = watchPartyService.inviteUserToWatchParty(watchPartyId, username, inviterId);
-    
-    return responseMessage.equals("Username does not exist")
-            ? ResponseEntity.status(HttpStatus.NOT_FOUND).body(responseMessage)
-            : ResponseEntity.ok(responseMessage);
+        String responseMessage = watchPartyService.inviteUserToWatchParty(watchPartyId, username, inviterId);
+
+        return responseMessage.equals("Username does not exist")
+                ? ResponseEntity.status(HttpStatus.NOT_FOUND).body(responseMessage)
+                : ResponseEntity.ok(responseMessage);
     }
 
     /**
@@ -113,5 +113,16 @@ public class WatchPartyController {
         return updated
                 ? ResponseEntity.ok("Invite response recorded successfully!")
                 : ResponseEntity.status(HttpStatus.NOT_FOUND).body("Failed to update invite response.");
+    }
+
+    /**
+     * 🔥 New API for polling latest invite status.
+     * @param watchPartyId - Watch Party ID.
+     * @return JSON with latest invite response updates.
+     */
+    @GetMapping("/{watchPartyId}/latest-invite-status")
+    public ResponseEntity<List<String>> getLatestInviteResponses(@PathVariable Long watchPartyId) {
+        List<String> latestResponses = watchPartyService.getLatestInviteResponses(watchPartyId);
+        return new ResponseEntity<>(latestResponses, HttpStatus.OK);
     }
 }

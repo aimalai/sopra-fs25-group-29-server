@@ -167,5 +167,15 @@ public class WatchPartyService {
         }
         return false; // No invites found
     }
-    
+    /**
+     * 🔥 New method for polling latest invite responses.
+     * @param watchPartyId - Watch Party ID.
+     * @return List of updated invite statuses.
+     */
+    public List<String> getLatestInviteResponses(Long watchPartyId) {
+        return inviteRepository.findByWatchPartyId(watchPartyId)
+                .stream()
+                .map(invite -> invite.getUsername() + " - " + invite.getStatus()) // ✅ Fetch username & status
+                .toList();
+    }
 }
