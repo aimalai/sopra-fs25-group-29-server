@@ -36,7 +36,7 @@ public class EmailService {
         }
     }
 
-    private void sendEmail(String recipient, String subject, String body) throws MessagingException {
+    public void sendEmail(String recipient, String subject, String body) throws MessagingException {
         Properties properties = new Properties();
         properties.put("mail.smtp.host", "smtp.gmail.com");
         properties.put("mail.smtp.port", "587");

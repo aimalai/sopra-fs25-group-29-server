@@ -7,10 +7,6 @@ import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import javax.persistence.CollectionTable;
-import javax.persistence.Column;
-import javax.persistence.ElementCollection;
-import javax.persistence.JoinColumn;
 import java.util.Set;
 import java.util.HashSet;
 
@@ -42,7 +38,7 @@ public class User implements Serializable {
     @Column
     private LocalDate birthday;
 
-    @Column
+    @Column(nullable = false, unique = true)
     private String email;
 
     @Column(length = 1000)
