@@ -1,5 +1,5 @@
 plugins {
-    id 'org.springframework.boot' version '2.4.13'
+    id 'org.springframework.boot' version '2.6.12' // Updated version for compatibility with your local setup
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
     id 'java'
     id 'idea'
@@ -32,22 +32,39 @@ springBoot {
 }
 
 dependencies {
+    // MapStruct Dependencies
     implementation 'org.mapstruct:mapstruct:1.3.1.Final'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.3.1.Final'
     testAnnotationProcessor 'org.mapstruct:mapstruct-processor:1.3.1.Final'
 
+    // Spring Boot Dependencies
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
 
+    // Development Tools
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
-    runtimeOnly 'com.h2database:h2'
 
+    // Database Drivers
+    runtimeOnly 'com.h2database:h2'
+    runtimeOnly 'org.postgresql:postgresql' // Added PostgreSQL driver for consistency with local
+
+    // Security and Validation Dependencies (from local)
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'javax.validation:validation-api:2.0.1.Final'
+    implementation 'org.springframework.security:spring-security-crypto:5.6.0'
+    implementation 'org.hibernate.validator:hibernate-validator:6.2.4.Final'
+
+    // JavaMail API for Email Service
+    implementation 'com.sun.mail:jakarta.mail:2.0.1'
+    implementation 'jakarta.activation:jakarta.activation-api:2.0.1' // To fix missing DataHandler error
+
+    // Testing Dependencies
     testImplementation('org.springframework.boot:spring-boot-starter-test') {
         exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
     }
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.5.2'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.5.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2' // Updated to match local version
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
 }
 
 bootJar {
@@ -75,7 +92,7 @@ if (secretPropsFile.exists()) {
     }
 }
 
-sonar { // Added SonarQube configuration
+sonar {
     properties {
         property "sonar.projectKey", "aimalai_sopra-fs25-group-29-server"
         property "sonar.organization", "aimalai"
