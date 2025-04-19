@@ -42,6 +42,7 @@ public class UserServiceIntegrationTest {
         User testUser = new User();
         testUser.setPassword("User.1234");
         testUser.setUsername("testUsername");
+        testUser.setEmail("test@example.com"); // Added email field
 
         // when
         User createdUser = userService.createUser(testUser);
@@ -50,6 +51,7 @@ public class UserServiceIntegrationTest {
         assertEquals(testUser.getId(), createdUser.getId());
         assertEquals(testUser.getPassword(), createdUser.getPassword());
         assertEquals(testUser.getUsername(), createdUser.getUsername());
+        assertEquals(testUser.getEmail(), createdUser.getEmail()); // Verify email field
         assertNotNull(createdUser.getToken());
         assertEquals(UserStatus.ONLINE, createdUser.getStatus());
     }
@@ -61,14 +63,14 @@ public class UserServiceIntegrationTest {
         User testUser = new User();
         testUser.setPassword("User.1234");
         testUser.setUsername("testUsername");
+        testUser.setEmail("test@example.com"); // Added email field
         User createdUser = userService.createUser(testUser);
 
         // attempt to create second user with same username
         User testUser2 = new User();
-
-        // change the name but forget about the username
         testUser2.setPassword("User.1234");
         testUser2.setUsername("testUsername");
+        testUser2.setEmail("duplicate@example.com"); // Added email field
 
         // check that an error is thrown
         assertThrows(ResponseStatusException.class, () -> userService.createUser(testUser2));

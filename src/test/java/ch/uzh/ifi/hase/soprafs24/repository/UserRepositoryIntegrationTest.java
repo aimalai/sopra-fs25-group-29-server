@@ -25,6 +25,7 @@ public class UserRepositoryIntegrationTest {
         User user = new User();
         user.setPassword("User.1234");
         user.setUsername("firstname@lastname");
+        user.setEmail("test@example.com"); // Added email field
         user.setStatus(UserStatus.ONLINE);
         user.setToken("1");
 
@@ -38,6 +39,7 @@ public class UserRepositoryIntegrationTest {
         assertNotNull(found.getId());
         assertEquals(found.getPassword(), user.getPassword());
         assertEquals(found.getUsername(), user.getUsername());
+        assertEquals(found.getEmail(), user.getEmail()); // Verify email field
         assertEquals(found.getToken(), user.getToken());
         assertEquals(found.getStatus(), user.getStatus());
     }

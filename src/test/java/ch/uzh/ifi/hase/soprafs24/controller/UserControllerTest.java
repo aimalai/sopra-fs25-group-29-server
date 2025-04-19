@@ -40,13 +40,15 @@ public class UserControllerTest {
         user.setId(1L);
         user.setPassword("User.1234");
         user.setUsername("testUsername");
+        user.setEmail("test@example.com"); // Added email field
         user.setToken("1");
         user.setStatus(UserStatus.ONLINE);
 
-        // Input Username and Password
+        // Input Username, Password, and Email
         UserPostDTO userPostDTO = new UserPostDTO();
         userPostDTO.setPassword("User.1234");
         userPostDTO.setUsername("testUsername");
+        userPostDTO.setEmail("test@example.com"); // Added email field
 
         // create the mock object
         given(userService.createUser(Mockito.any())).willReturn(user);
@@ -59,6 +61,7 @@ public class UserControllerTest {
                 .andExpect(jsonPath("$.id", is(user.getId().intValue())))
                 .andExpect(jsonPath("$.password", is(user.getPassword())))
                 .andExpect(jsonPath("$.username", is(user.getUsername())))
+                .andExpect(jsonPath("$.email", is(user.getEmail()))) // Verify email field
                 .andExpect(jsonPath("$.status", is(user.getStatus().toString())));
     }
 
@@ -68,9 +71,12 @@ public class UserControllerTest {
         UserPostDTO userPostDTO = new UserPostDTO();
         userPostDTO.setPassword("User.1234");
         userPostDTO.setUsername("existingUser");
+        userPostDTO.setEmail("existing@example.com"); // Added email field
+
         // mock the error
         Mockito.doThrow(new ResponseStatusException(HttpStatus.CONFLICT, "Username already exists"))
                 .when(userService).createUser(Mockito.any());
+
         // test if error
         mockMvc.perform(post("/users")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -85,6 +91,7 @@ public class UserControllerTest {
         user.setId(1L);
         user.setPassword("User.1234");
         user.setUsername("firstname@lastname");
+        user.setEmail("test@example.com"); // Added email field
         user.setStatus(UserStatus.OFFLINE);
 
         // get user
@@ -96,6 +103,7 @@ public class UserControllerTest {
                 .andExpect(jsonPath("$.id", is(user.getId().intValue())))
                 .andExpect(jsonPath("$.password", is(user.getPassword())))
                 .andExpect(jsonPath("$.username", is(user.getUsername())))
+                .andExpect(jsonPath("$.email", is(user.getEmail()))) // Verify email field
                 .andExpect(jsonPath("$.status", is(user.getStatus().toString())));
     }
 
@@ -115,7 +123,7 @@ public class UserControllerTest {
         Mockito.doNothing().when(userService).updateUser(Mockito.eq(1L), Mockito.any());
 
         // changes
-        String updateBody = "{\"username\": \"updatedUsername\", \"birthday\": \"2000-01-01\"}";
+        String updateBody = "{\"username\": \"updatedUsername\", \"birthday\": \"2000-01-01\", \"email\": \"updated@example.com\"}";
 
         // put
         mockMvc.perform(put("/users/1")
@@ -131,7 +139,7 @@ public class UserControllerTest {
                 .when(userService).updateUser(Mockito.eq(99L), Mockito.any());
 
         // set user
-        String updateBody = "{\"username\": \"whatever\"}";
+        String updateBody = "{\"username\": \"whatever\", \"email\": \"whatever@example.com\"}";
 
         // try to put
         mockMvc.perform(put("/users/99")
