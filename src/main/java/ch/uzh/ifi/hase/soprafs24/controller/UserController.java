@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -77,10 +78,14 @@ public class UserController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "movieId is required");
         }
 
-        String json = String.format("{\"movieId\":\"%s\",\"title\":\"%s\",\"posterPath\":\"%s\"}",
-                movieId,
-                title != null ? title : "",
-                posterPath != null ? posterPath : "");
+        String addedOn = LocalDateTime.now().toString();
+        String json = String.format(
+            "{\"movieId\":\"%s\",\"title\":\"%s\",\"posterPath\":\"%s\",\"addedOn\":\"%s\"}",
+            movieId,
+            title != null ? title : "",
+            posterPath != null ? posterPath : "",
+            addedOn
+        );
 
         userService.addMovieToWatchlist(userId, json);
         return "{\"message\": \"Movie added to watchlist\"}";
@@ -107,7 +112,6 @@ public class UserController {
         } else {
             users = userService.getUsers();
         }
-
         List<UserGetDTO> userGetDTOs = new ArrayList<>();
         for (User user : users) {
             userGetDTOs.add(DTOMapper.INSTANCE.convertEntityToUserGetDTO(user));
