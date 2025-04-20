@@ -6,12 +6,16 @@ import ch.uzh.ifi.hase.soprafs24.rest.dto.UserPostDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.UserUpdateDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.mapper.DTOMapper;
 import ch.uzh.ifi.hase.soprafs24.service.UserService;
+import ch.uzh.ifi.hase.soprafs24.service.OTPService;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import java.util.Collections;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -20,9 +24,11 @@ import java.util.Map;
 public class UserController {
 
     private final UserService userService;
+    private final OTPService otpService; // New service for handling OTP functionality
 
-    UserController(UserService userService) {
+    UserController(UserService userService, OTPService otpService) {
         this.userService = userService;
+        this.otpService = otpService;
     }
 
     @PostMapping("")
@@ -33,16 +39,30 @@ public class UserController {
         return DTOMapper.INSTANCE.convertEntityToUserGetDTO(createdUser);
     }
 
-    @PostMapping("/login")
-    @ResponseStatus(HttpStatus.OK)
-    public UserGetDTO loginUser(@RequestBody UserPostDTO userPostDTO) {
+@PostMapping("/login")
+@ResponseStatus(HttpStatus.OK)
+public ResponseEntity<Map<String, String>> loginUser(@RequestBody UserPostDTO userPostDTO) {
+    try {
+        // Validate username and password
         User userInput = DTOMapper.INSTANCE.convertUserPostDTOtoEntity(userPostDTO);
         User loggedInUser = userService.loginUser(userInput.getUsername(), userInput.getPassword());
-        String token = java.util.UUID.randomUUID().toString();
-        loggedInUser.setToken(token);
-        userService.updateUser(loggedInUser.getId(), loggedInUser);
-        return DTOMapper.INSTANCE.convertEntityToUserGetDTO(loggedInUser);
+
+        // Generate and send OTP
+        otpService.sendOTP(loggedInUser.getUsername());
+
+        // Respond with a message indicating OTP was sent
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "OTP sent to your registered email.");
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    } catch (IllegalArgumentException e) {
+        // Handle invalid credentials
+        return new ResponseEntity<>(Collections.singletonMap("error", e.getMessage()), HttpStatus.UNAUTHORIZED);
+    } catch (Exception e) {
+        // Handle unexpected errors
+        return new ResponseEntity<>(Collections.singletonMap("error", "An error occurred during login."), HttpStatus.INTERNAL_SERVER_ERROR);
     }
+}
+
 
     @GetMapping("/{userId}")
     @ResponseStatus(HttpStatus.OK)
@@ -160,4 +180,52 @@ public class UserController {
         }
         return friendDTOs;
     }
+
+    // NEW: OTP-related endpoints
+    @PostMapping("/otp/send")
+    @ResponseStatus(HttpStatus.OK)
+    public void sendOTP(@RequestBody Map<String, String> payload) {
+        String username = payload.get("username");
+        if (username == null || username.trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username is required to send OTP.");
+        }
+        otpService.sendOTP(username);
+    }
+
+    @PostMapping("/otp/verify")
+@ResponseStatus(HttpStatus.OK)
+public ResponseEntity<Map<String, String>> verifyOTP(@RequestBody Map<String, String> payload) {
+    String username = payload.get("username");
+    String otp = payload.get("otp");
+
+    // Validate request payload
+    if (username == null || username.trim().isEmpty()) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username is required for OTP verification.");
+    }
+    if (otp == null || otp.trim().isEmpty()) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "OTP is required for verification.");
+    }
+
+    try {
+        // Verify OTP and retrieve response containing token and userId
+        Map<String, String> response = otpService.verifyOTP(username, otp);
+
+        // Return the success response with token, userId, and message
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    } catch (IllegalArgumentException e) {
+        // Build JSON error response for invalid OTP
+        return new ResponseEntity<>(
+            Collections.singletonMap("error", e.getMessage()), 
+            HttpStatus.UNAUTHORIZED
+        );
+    } catch (Exception e) {
+        // Build JSON error response for unexpected errors
+        return new ResponseEntity<>(
+            Collections.singletonMap("error", "An unexpected error occurred during OTP verification."), 
+            HttpStatus.INTERNAL_SERVER_ERROR
+        );
+    }
+}
+
+    
 }
