@@ -10,6 +10,7 @@ import ch.uzh.ifi.hase.soprafs24.service.OTPService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import java.util.Collections;
 
@@ -24,7 +25,7 @@ import java.util.Map;
 public class UserController {
 
     private final UserService userService;
-    private final OTPService otpService; // New service for handling OTP functionality
+    private final OTPService otpService;
 
     UserController(UserService userService, OTPService otpService) {
         this.userService = userService;
@@ -39,30 +40,34 @@ public class UserController {
         return DTOMapper.INSTANCE.convertEntityToUserGetDTO(createdUser);
     }
 
-@PostMapping("/login")
-@ResponseStatus(HttpStatus.OK)
-public ResponseEntity<Map<String, String>> loginUser(@RequestBody UserPostDTO userPostDTO) {
-    try {
-        // Validate username and password
-        User userInput = DTOMapper.INSTANCE.convertUserPostDTOtoEntity(userPostDTO);
-        User loggedInUser = userService.loginUser(userInput.getUsername(), userInput.getPassword());
-
-        // Generate and send OTP
-        otpService.sendOTP(loggedInUser.getUsername());
-
-        // Respond with a message indicating OTP was sent
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "OTP sent to your registered email.");
-        return new ResponseEntity<>(response, HttpStatus.OK);
-    } catch (IllegalArgumentException e) {
-        // Handle invalid credentials
-        return new ResponseEntity<>(Collections.singletonMap("error", e.getMessage()), HttpStatus.UNAUTHORIZED);
-    } catch (Exception e) {
-        // Handle unexpected errors
-        return new ResponseEntity<>(Collections.singletonMap("error", "An error occurred during login."), HttpStatus.INTERNAL_SERVER_ERROR);
+    @PostMapping("/{userId}/upload-picture")
+    public ResponseEntity<Map<String, String>> uploadProfilePicture(@PathVariable Long userId, @RequestParam("file") MultipartFile file) {
+        try {
+            String imageUrl = userService.uploadProfilePicture(userId, file);
+            Map<String, String> response = new HashMap<>();
+            response.put("profilePictureUrl", imageUrl);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Image upload failed.");
+        }
     }
-}
 
+    @PostMapping("/login")
+    @ResponseStatus(HttpStatus.OK)
+    public ResponseEntity<Map<String, String>> loginUser(@RequestBody UserPostDTO userPostDTO) {
+        try {
+            User userInput = DTOMapper.INSTANCE.convertUserPostDTOtoEntity(userPostDTO);
+            User loggedInUser = userService.loginUser(userInput.getUsername(), userInput.getPassword());
+            otpService.sendOTP(loggedInUser.getUsername());
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "OTP sent to your registered email.");
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(Collections.singletonMap("error", e.getMessage()), HttpStatus.UNAUTHORIZED);
+        } catch (Exception e) {
+            return new ResponseEntity<>(Collections.singletonMap("error", "An error occurred during login."), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 
     @GetMapping("/{userId}")
     @ResponseStatus(HttpStatus.OK)
@@ -93,20 +98,12 @@ public ResponseEntity<Map<String, String>> loginUser(@RequestBody UserPostDTO us
         String movieId = payload.get("movieId");
         String title = payload.get("title");
         String posterPath = payload.get("posterPath");
-
         if (movieId == null || movieId.trim().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "movieId is required");
         }
-
         String addedOn = LocalDateTime.now().toString();
-        String json = String.format(
-            "{\"movieId\":\"%s\",\"title\":\"%s\",\"posterPath\":\"%s\",\"addedOn\":\"%s\"}",
-            movieId,
-            title != null ? title : "",
-            posterPath != null ? posterPath : "",
-            addedOn
-        );
-
+        String json = String.format("{\"movieId\":\"%s\",\"title\":\"%s\",\"posterPath\":\"%s\",\"addedOn\":\"%s\"}",
+            movieId, title != null ? title : "", posterPath != null ? posterPath : "", addedOn);
         userService.addMovieToWatchlist(userId, json);
         return "{\"message\": \"Movie added to watchlist\"}";
     }
@@ -126,12 +123,9 @@ public ResponseEntity<Map<String, String>> loginUser(@RequestBody UserPostDTO us
     @GetMapping("")
     @ResponseStatus(HttpStatus.OK)
     public List<UserGetDTO> getAllUsers(@RequestParam(value = "username", required = false) String username) {
-        List<User> users;
-        if (username != null && !username.trim().isEmpty()) {
-            users = userService.getUsersByUsername(username);
-        } else {
-            users = userService.getUsers();
-        }
+        List<User> users = (username != null && !username.trim().isEmpty())
+                ? userService.getUsersByUsername(username)
+                : userService.getUsers();
         List<UserGetDTO> userGetDTOs = new ArrayList<>();
         for (User user : users) {
             userGetDTOs.add(DTOMapper.INSTANCE.convertEntityToUserGetDTO(user));
@@ -181,7 +175,6 @@ public ResponseEntity<Map<String, String>> loginUser(@RequestBody UserPostDTO us
         return friendDTOs;
     }
 
-    // NEW: OTP-related endpoints
     @PostMapping("/otp/send")
     @ResponseStatus(HttpStatus.OK)
     public void sendOTP(@RequestBody Map<String, String> payload) {
@@ -193,39 +186,23 @@ public ResponseEntity<Map<String, String>> loginUser(@RequestBody UserPostDTO us
     }
 
     @PostMapping("/otp/verify")
-@ResponseStatus(HttpStatus.OK)
-public ResponseEntity<Map<String, String>> verifyOTP(@RequestBody Map<String, String> payload) {
-    String username = payload.get("username");
-    String otp = payload.get("otp");
-
-    // Validate request payload
-    if (username == null || username.trim().isEmpty()) {
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username is required for OTP verification.");
+    @ResponseStatus(HttpStatus.OK)
+    public ResponseEntity<Map<String, String>> verifyOTP(@RequestBody Map<String, String> payload) {
+        String username = payload.get("username");
+        String otp = payload.get("otp");
+        if (username == null || username.trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username is required for OTP verification.");
+        }
+        if (otp == null || otp.trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "OTP is required for verification.");
+        }
+        try {
+            Map<String, String> response = otpService.verifyOTP(username, otp);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(Collections.singletonMap("error", e.getMessage()), HttpStatus.UNAUTHORIZED);
+        } catch (Exception e) {
+            return new ResponseEntity<>(Collections.singletonMap("error", "An unexpected error occurred during OTP verification."), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
-    if (otp == null || otp.trim().isEmpty()) {
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "OTP is required for verification.");
-    }
-
-    try {
-        // Verify OTP and retrieve response containing token and userId
-        Map<String, String> response = otpService.verifyOTP(username, otp);
-
-        // Return the success response with token, userId, and message
-        return new ResponseEntity<>(response, HttpStatus.OK);
-    } catch (IllegalArgumentException e) {
-        // Build JSON error response for invalid OTP
-        return new ResponseEntity<>(
-            Collections.singletonMap("error", e.getMessage()), 
-            HttpStatus.UNAUTHORIZED
-        );
-    } catch (Exception e) {
-        // Build JSON error response for unexpected errors
-        return new ResponseEntity<>(
-            Collections.singletonMap("error", "An unexpected error occurred during OTP verification."), 
-            HttpStatus.INTERNAL_SERVER_ERROR
-        );
-    }
-}
-
-    
 }

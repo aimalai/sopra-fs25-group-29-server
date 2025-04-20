@@ -3,8 +3,9 @@ package ch.uzh.ifi.hase.soprafs24.service;
 import ch.uzh.ifi.hase.soprafs24.constant.UserStatus;
 import ch.uzh.ifi.hase.soprafs24.entity.User;
 import ch.uzh.ifi.hase.soprafs24.repository.UserRepository;
-import ch.uzh.ifi.hase.soprafs24.service.EmailService;
+import ch.uzh.utils.ImageUploadUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.mail.MessagingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,15 +13,12 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
-import jakarta.mail.MessagingException;
-
+import java.io.IOException;
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.ArrayList;
+import java.util.*;
 
 @Service
 @Transactional
@@ -45,32 +43,44 @@ public class UserService {
     public User createUser(User newUser) {
         newUser.setToken(UUID.randomUUID().toString());
         newUser.setStatus(UserStatus.ONLINE);
-    
+
         if (newUser.getEmail() == null || newUser.getEmail().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email is required.");
         }
-    
+
         checkIfUserExists(newUser);
         newUser.setCreationDate(LocalDate.now());
         newUser = userRepository.save(newUser);
         userRepository.flush();
-    
+
         try {
             emailService.sendEmail(
-                newUser.getEmail(),
-                "Welcome to Flicks & Friends!",
-                "Thank you for registering. We're excited to have you on board!"
+                    newUser.getEmail(),
+                    "Welcome to Flicks & Friends!",
+                    "Thank you for registering. We're excited to have you on board!"
             );
             log.info("Welcome email sent to {}", newUser.getEmail());
         } catch (MessagingException e) {
             log.error("Failed to send welcome email to {}: {}", newUser.getEmail(), e.getMessage());
-            // Allow registration to succeed even if email fails
         }
-    
+
         log.debug("Created Information for User: {}", newUser);
         return newUser;
     }
-    
+
+    public String uploadProfilePicture(Long userId, MultipartFile file) throws IOException {
+        User user = getUserById(userId);
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+        }
+
+        String filename = "user_" + userId + "_" + System.currentTimeMillis() + "_" + file.getOriginalFilename();
+        String imageUrl = ImageUploadUtil.saveImage(file, filename);
+
+        user.setProfilePictureUrl(imageUrl);
+        userRepository.save(user);
+        return imageUrl;
+    }
 
     private void checkIfUserExists(User userToBeCreated) {
         User userByUsername = userRepository.findByUsername(userToBeCreated.getUsername());
@@ -106,7 +116,7 @@ public class UserService {
     public void updateUser(Long userId, User userData) {
         User existingUser = userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-    
+
         if (userData.getUsername() != null && !userData.getUsername().isEmpty()) {
             User userByUsername = userRepository.findByUsername(userData.getUsername());
             if (userByUsername != null && !userByUsername.getId().equals(userId)) {
@@ -114,15 +124,15 @@ public class UserService {
             }
             existingUser.setUsername(userData.getUsername());
         }
-    
+
         if (userData.getPassword() != null) {
             existingUser.setPassword(userData.getPassword());
         }
-    
+
         if (userData.getBirthday() != null) {
             existingUser.setBirthday(userData.getBirthday());
         }
-    
+
         if (userData.getEmail() != null) {
             User userByEmail = userRepository.findByEmail(userData.getEmail());
             if (userByEmail != null && !userByEmail.getId().equals(userId)) {
@@ -130,25 +140,25 @@ public class UserService {
             }
             existingUser.setEmail(userData.getEmail());
         }
-    
+
         if (userData.getBiography() != null) {
             existingUser.setBiography(userData.getBiography());
         }
-    
+
         if (userData.getProfilePictureUrl() != null) {
             existingUser.setProfilePictureUrl(userData.getProfilePictureUrl());
         }
-    
+
         if (userData.isSharable() != existingUser.isSharable()) {
             existingUser.setSharable(userData.isSharable());
         }
-    
+
         if (userData.isPublicRatings() != existingUser.isPublicRatings()) {
             existingUser.setPublicRatings(userData.isPublicRatings());
         }
-    
+
         userRepository.save(existingUser);
-    }    
+    }
 
     public void addMovieToWatchlist(Long userId, String jsonString) {
         User user = getUserById(userId);
