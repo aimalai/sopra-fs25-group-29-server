@@ -57,6 +57,31 @@ public class LobbyController {
         }
     }
 
+    public static class LobbyChatMessage {
+        private String roomId;
+        private String sender;
+        private String content;
+        private java.time.LocalDateTime timestamp;
+
+        public String getRoomId() { return roomId; }
+        public void setRoomId(String roomId) { this.roomId = roomId; }
+        public String getSender() { return sender; }
+        public void setSender(String sender) { this.sender = sender; }
+        public String getContent() { return content; }
+        public void setContent(String content) { this.content = content; }
+        public java.time.LocalDateTime getTimestamp() { return timestamp; }
+        public void setTimestamp(java.time.LocalDateTime timestamp) { this.timestamp = timestamp; }
+    }
+
+    @MessageMapping("/chat.sendLobbyMessage")
+    public void handleLobbyChat(@Payload LobbyChatMessage msg) {
+        msg.setTimestamp(java.time.LocalDateTime.now());
+        messagingTemplate.convertAndSend(
+            "/topic/chat/" + msg.getRoomId(),
+            msg
+        );
+    }
+
     public void removeSession(String sessionId) {
         roomStates.forEach((roomId, states) -> {
             if (states.remove(sessionId) != null) {
