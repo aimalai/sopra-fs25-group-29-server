@@ -26,6 +26,7 @@ public class UserController {
 
     private final UserService userService;
     private final OTPService otpService;
+    private final Map<String, FailedLoginData> loginFailures = new HashMap<>();
 
     UserController(UserService userService, OTPService otpService) {
         this.userService = userService;
@@ -54,20 +55,118 @@ public class UserController {
 
     @PostMapping("/login")
     @ResponseStatus(HttpStatus.OK)
-    public ResponseEntity<Map<String, String>> loginUser(@RequestBody UserPostDTO userPostDTO) {
+    public ResponseEntity<Map<String, Object>> loginUser(@RequestBody UserPostDTO userPostDTO) {
+        String username = userPostDTO.getUsername();
+        String password = userPostDTO.getPassword();
+    
         try {
+            // Check lockout status
+            if (isUserLocked(username)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Too many failed attempts. Your account is locked. Please try again later.");
+            }
+    
             User userInput = DTOMapper.INSTANCE.convertUserPostDTOtoEntity(userPostDTO);
             User loggedInUser = userService.loginUser(userInput.getUsername(), userInput.getPassword());
+    
+            // Reset failed login attempts on successful login
+            resetFailedLogins(username);
+    
+            // Send OTP after successful login
             otpService.sendOTP(loggedInUser.getUsername());
-            Map<String, String> response = new HashMap<>();
+    
+            Map<String, Object> response = new HashMap<>();
             response.put("message", "OTP sent to your registered email.");
+            response.put("userId", loggedInUser.getId());
+    
             return new ResponseEntity<>(response, HttpStatus.OK);
+    
+        } catch (ResponseStatusException e) {
+            // Ensure failed login logic is applied for lockouts
+            handleFailedLogin(username); 
+            return new ResponseEntity<>(
+                Collections.singletonMap("error", e.getReason()),
+                e.getStatus()
+            );
         } catch (IllegalArgumentException e) {
-            return new ResponseEntity<>(Collections.singletonMap("error", e.getMessage()), HttpStatus.UNAUTHORIZED);
+            // Handle failed login attempt with refined messaging
+            handleFailedLogin(username);
+            return new ResponseEntity<>(Collections.singletonMap("error", "Login failed: invalid username or password."), HttpStatus.UNAUTHORIZED);
         } catch (Exception e) {
-            return new ResponseEntity<>(Collections.singletonMap("error", "An error occurred during login."), HttpStatus.INTERNAL_SERVER_ERROR);
+            // Handle unexpected general errors
+            handleFailedLogin(username);
+            return new ResponseEntity<>(Collections.singletonMap("error", "An unexpected error occurred. Please try again."), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+    
+    private void handleFailedLogin(String username) {
+        System.out.println("Processing failed login for username: " + username);
+    
+        // Use UserService to check if user exists
+        User user = userService.findByUsername(username);
+        if (user == null) {
+            System.out.println("User " + username + " does not exist. Skipping failed login processing.");
+            return; // Exit early for non-registered users
+        }
+    
+        FailedLoginData data = loginFailures.getOrDefault(username, new FailedLoginData(0, null));
+    
+        // Check if user is already locked
+        if (data.getLockoutUntil() != null && LocalDateTime.now().isBefore(data.getLockoutUntil())) {
+            System.out.println("User " + username + " is already locked until: " + data.getLockoutUntil());
+            return; // Exit early to prevent updates
+        }
+    
+        int attempts = data.getAttempts() + 1;
+        if (attempts >= 5) {
+            data.setLockoutUntil(LocalDateTime.now().plusMinutes(30));
+            System.out.println("User " + username + " is now locked until: " + data.getLockoutUntil());
+        }
+        data.setAttempts(attempts);
+        loginFailures.put(username, data);
+        System.out.println("Updated failed attempts for " + username + ": " + attempts);
+    }
+        
+
+    private boolean isUserLocked(String username) {
+        FailedLoginData data = loginFailures.get(username);
+        if (data != null && data.getLockoutUntil() != null) {
+            if (LocalDateTime.now().isBefore(data.getLockoutUntil())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void resetFailedLogins(String username) {
+        loginFailures.remove(username);
+    }
+
+    static class FailedLoginData {
+        private int attempts;
+        private LocalDateTime lockoutUntil;
+
+        public FailedLoginData(int attempts, LocalDateTime lockoutUntil) {
+            this.attempts = attempts;
+            this.lockoutUntil = lockoutUntil;
+        }
+
+        public int getAttempts() {
+            return attempts;
+        }
+
+        public void setAttempts(int attempts) {
+            this.attempts = attempts;
+        }
+
+        public LocalDateTime getLockoutUntil() {
+            return lockoutUntil;
+        }
+
+        public void setLockoutUntil(LocalDateTime lockoutUntil) {
+            this.lockoutUntil = lockoutUntil;
+        }
+    }
+
 
     @GetMapping("/{userId}")
     @ResponseStatus(HttpStatus.OK)
@@ -82,8 +181,9 @@ public class UserController {
     @PutMapping("/{userId}/logout")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void logoutUser(@PathVariable Long userId) {
+        System.out.println("Received userId for logout: " + userId); // Log the received userId
         userService.logoutUser(userId);
-    }
+    }    
 
     @PutMapping("/{userId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)

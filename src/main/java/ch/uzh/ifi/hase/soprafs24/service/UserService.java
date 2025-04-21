@@ -203,6 +203,10 @@ public class UserService {
         userRepository.save(user);
     }
 
+    public User findByUsername(String username) {
+        return userRepository.findByUsername(username);
+    }
+    
     public List<User> getUsersByUsername(String username) {
         return userRepository.findByUsernameContaining(username);
     }
