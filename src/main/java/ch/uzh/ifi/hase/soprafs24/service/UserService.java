@@ -46,32 +46,46 @@ public class UserService {
     }
 
     public User createUser(User newUser) {
+        // Generate token and set initial status
         newUser.setToken(UUID.randomUUID().toString());
         newUser.setStatus(UserStatus.ONLINE);
-
+    
+        // Validate email presence
         if (newUser.getEmail() == null || newUser.getEmail().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email is required.");
         }
-
+    
+        // Check for duplicate username
         checkIfUserExists(newUser);
+    
+        // Check for duplicate email explicitly
+        User userByEmail = userRepository.findByEmail(newUser.getEmail());
+        if (userByEmail != null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use.");
+        }
+    
+        // Set creation date and save user to repository
         newUser.setCreationDate(LocalDate.now());
         newUser = userRepository.save(newUser);
         userRepository.flush();
-
+    
+        // Send welcome email
         try {
             emailService.sendEmail(
-                    newUser.getEmail(),
-                    "Welcome to Flicks & Friends!",
-                    "Thank you for registering. We're excited to have you on board!"
+                newUser.getEmail(),
+                "Welcome to Flicks & Friends!",
+                "Thank you for registering. We're excited to have you on board!"
             );
             log.info("Welcome email sent to {}", newUser.getEmail());
         } catch (MessagingException e) {
             log.error("Failed to send welcome email to {}: {}", newUser.getEmail(), e.getMessage());
         }
-
+    
+        // Log user creation details
         log.debug("Created Information for User: {}", newUser);
         return newUser;
     }
+    
 
     public String uploadProfilePicture(Long userId, MultipartFile file) throws IOException {
         User user = getUserById(userId);
