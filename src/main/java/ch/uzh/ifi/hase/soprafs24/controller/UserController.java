@@ -1,6 +1,7 @@
 package ch.uzh.ifi.hase.soprafs24.controller;
 
 import ch.uzh.ifi.hase.soprafs24.entity.User;
+import ch.uzh.ifi.hase.soprafs24.exceptions.CustomResponseException;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.UserGetDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.UserPostDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.UserUpdateDTO;
@@ -12,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
+import ch.uzh.ifi.hase.soprafs24.exceptions.CustomResponseException;
 import java.util.Collections;
 
 import java.time.LocalDateTime;
@@ -53,51 +55,45 @@ public class UserController {
         }
     }
 
-    @PostMapping("/login")
-    @ResponseStatus(HttpStatus.OK)
-    public ResponseEntity<Map<String, Object>> loginUser(@RequestBody UserPostDTO userPostDTO) {
-        String username = userPostDTO.getUsername();
-        String password = userPostDTO.getPassword();
-    
-        try {
-            // Check lockout status
-            if (isUserLocked(username)) {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Too many failed attempts. Your account is locked. Please try again later.");
-            }
-    
-            User userInput = DTOMapper.INSTANCE.convertUserPostDTOtoEntity(userPostDTO);
-            User loggedInUser = userService.loginUser(userInput.getUsername(), userInput.getPassword());
-    
-            // Reset failed login attempts on successful login
-            resetFailedLogins(username);
-    
-            // Send OTP after successful login
-            otpService.sendOTP(loggedInUser.getUsername());
-    
-            Map<String, Object> response = new HashMap<>();
-            response.put("message", "OTP sent to your registered email.");
-            response.put("userId", loggedInUser.getId());
-    
-            return new ResponseEntity<>(response, HttpStatus.OK);
-    
-        } catch (ResponseStatusException e) {
-            // Ensure failed login logic is applied for lockouts
-            handleFailedLogin(username); 
-            return new ResponseEntity<>(
-                Collections.singletonMap("error", e.getReason()),
-                e.getStatus()
-            );
-        } catch (IllegalArgumentException e) {
-            // Handle failed login attempt with refined messaging
-            handleFailedLogin(username);
-            return new ResponseEntity<>(Collections.singletonMap("error", "Login failed: invalid username or password."), HttpStatus.UNAUTHORIZED);
-        } catch (Exception e) {
-            // Handle unexpected general errors
-            handleFailedLogin(username);
-            return new ResponseEntity<>(Collections.singletonMap("error", "An unexpected error occurred. Please try again."), HttpStatus.INTERNAL_SERVER_ERROR);
+@PostMapping("/login")
+@ResponseStatus(HttpStatus.OK)
+public ResponseEntity<Map<String, Object>> loginUser(@RequestBody UserPostDTO userPostDTO) {
+    String username = userPostDTO.getUsername();
+    String password = userPostDTO.getPassword();
+
+    try {
+        // Check lockout status
+        if (isUserLocked(username)) {
+            throw new CustomResponseException("Too many failed attempts. Your account is locked. Please try again later.", HttpStatus.FORBIDDEN);
         }
+
+        User userInput = DTOMapper.INSTANCE.convertUserPostDTOtoEntity(userPostDTO);
+        User loggedInUser = userService.loginUser(userInput.getUsername(), userInput.getPassword());
+
+        // Reset failed login attempts on successful login
+        resetFailedLogins(username);
+
+        // Send OTP after successful login
+        otpService.sendOTP(loggedInUser.getUsername());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "OTP sent to your registered email.");
+        response.put("userId", loggedInUser.getId());
+
+        return ResponseEntity.ok(response);
+
+    } catch (CustomResponseException e) {
+        handleFailedLogin(username);
+        throw e; // Propagating CustomResponseException to the global exception handler
+    } catch (IllegalArgumentException e) {
+        handleFailedLogin(username);
+        throw new CustomResponseException("Login failed: invalid username or password.", HttpStatus.UNAUTHORIZED);
+    } catch (Exception e) {
+        handleFailedLogin(username);
+        throw new CustomResponseException("An unexpected error occurred. Please try again.", HttpStatus.INTERNAL_SERVER_ERROR);
     }
-    
+}
+
     private void handleFailedLogin(String username) {
         System.out.println("Processing failed login for username: " + username);
     

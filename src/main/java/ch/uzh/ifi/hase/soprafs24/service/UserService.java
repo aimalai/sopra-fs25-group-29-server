@@ -17,6 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import ch.uzh.ifi.hase.soprafs24.exceptions.CustomResponseException;
+
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -114,17 +116,18 @@ public class UserService {
     public User loginUser(String username, String password) {
         User user = userRepository.findByUsername(username);
         if (user == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User does not exist.");
+            throw new CustomResponseException("User does not exist.");
         }
     
         if (!passwordEncoder.matches(password, user.getPassword())) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Incorrect password.");
+            throw new CustomResponseException("Incorrect password.");
         }
     
         user.setStatus(UserStatus.ONLINE);
         userRepository.save(user);
         return user;
-    }    
+    }
+    
 
     public User getUserById(Long userId) {
         return userRepository.findById(userId).orElse(null);

@@ -1,4 +1,4 @@
-package ch.uzh.ifi.hase.soprafs24.exceptions; // Generated with help from my friend Chatgpt
+package ch.uzh.ifi.hase.soprafs24.exceptions;
 
 public class ErrorResponse {
 
