@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -31,6 +32,7 @@ public class UserService {
 
     private final Logger log = LoggerFactory.getLogger(UserService.class);
     private final UserRepository userRepository;
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Autowired
@@ -66,6 +68,7 @@ public class UserService {
     
         // Set creation date and save user to repository
         newUser.setCreationDate(LocalDate.now());
+        newUser.setPassword(passwordEncoder.encode(newUser.getPassword()));
         newUser = userRepository.save(newUser);
         userRepository.flush();
     
@@ -113,13 +116,15 @@ public class UserService {
         if (user == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User does not exist.");
         }
-        if (!user.getPassword().equals(password)) {
+    
+        if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Incorrect password.");
         }
+    
         user.setStatus(UserStatus.ONLINE);
         userRepository.save(user);
         return user;
-    }
+    }    
 
     public User getUserById(Long userId) {
         return userRepository.findById(userId).orElse(null);
@@ -145,7 +150,7 @@ public class UserService {
         }
 
         if (userData.getPassword() != null) {
-            existingUser.setPassword(userData.getPassword());
+            existingUser.setPassword(passwordEncoder.encode(userData.getPassword()));
         }
 
         if (userData.getBirthday() != null) {
