@@ -7,8 +7,8 @@ plugins {
     id "org.sonarqube" version "6.0.1.5171" // Added SonarQube plugin
 }
 
-group 'ch.uzh.ifi.hasel'
-version '1.0.0'
+group = 'ch.uzh.ifi.hase'
+version = '1.0.0'
 
 java {
     toolchain {
@@ -35,7 +35,6 @@ dependencies {
     // MapStruct Dependencies
     implementation 'org.mapstruct:mapstruct:1.3.1.Final'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.3.1.Final'
-    testAnnotationProcessor 'org.mapstruct:mapstruct-processor:1.3.1.Final'
 
     // Spring Boot Dependencies
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
@@ -71,9 +70,16 @@ bootJar {
     archiveFileName = "${archiveBaseName.get()}.${archiveExtension.get()}"
 }
 
+jacoco {
+    toolVersion = "0.8.7"
+}
+
 jacocoTestReport {
+    dependsOn test
     reports {
-        xml.enabled true
+        xml.required.set(true)
+        xml.outputLocation.set(layout.buildDirectory.file("reports/jacoco/test/jacocoTestReport.xml"))
+        html.required.set(true)
     }
 }
 
@@ -81,24 +87,30 @@ test {
     useJUnitPlatform()
     testLogging.showStandardStreams = true
     maxParallelForks = 1
-}
 
-File secretPropsFile = file('./local.properties')
-if (secretPropsFile.exists()) {
-    Properties p = new Properties()
-    p.load(new FileInputStream(secretPropsFile))
-    p.each { name, value ->
-        ext[name] = value
+    reports {
+        junitXml.required.set(true)
+        junitXml.outputLocation.set(layout.buildDirectory.dir("test-results/test"))
+        html.required.set(false)
     }
 }
 
-sonar {
+sonarqube {
     properties {
         property "sonar.projectKey", "aimalai_sopra-fs25-group-29-server"
         property "sonar.organization", "aimalai"
         property "sonar.host.url", "https://sonarcloud.io"
         property "sonar.projectName", "sopra-fs25-group-29-server"
+        property "sonar.sources",               "src/main/java"
+        property "sonar.tests",                 "src/test/java"
+        property "sonar.java.binaries",         "build/classes/java/main"
+        property "sonar.junit.reportPaths",     "${buildDir}/test-results/test"
+        property "sonar.coverage.jacoco.xmlReportPaths", "${buildDir}/reports/jacoco/test/jacocoTestReport.xml"
     }
 }
 
-defaultTasks 'bootJar', 'build'
+tasks.sonarqube {
+    dependsOn jacocoTestReport
+}
+
+defaultTasks 'build'
