@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.bind.annotation.RequestHeader;
 
 import ch.uzh.ifi.hase.soprafs24.entity.User;
 import ch.uzh.ifi.hase.soprafs24.exceptions.CustomResponseException;
@@ -77,8 +78,8 @@ public class UserController {
         try {
             if (isUserLocked(username)) {
                 throw new CustomResponseException(
-                    "Too many failed attempts. Your account is locked. Please try again later.",
-                    HttpStatus.FORBIDDEN
+                        "Too many failed attempts. Your account is locked. Please try again later.",
+                        HttpStatus.FORBIDDEN
                 );
             }
 
@@ -108,9 +109,13 @@ public class UserController {
 
     private void handleFailedLogin(String username) {
         User user = userService.findByUsername(username);
-        if (user == null) return;
+        if (user == null) {
+            return;
+        }
         FailedLoginData data = loginFailures.getOrDefault(username, new FailedLoginData(0, null));
-        if (data.getLockoutUntil() != null && LocalDateTime.now().isBefore(data.getLockoutUntil())) return;
+        if (data.getLockoutUntil() != null && LocalDateTime.now().isBefore(data.getLockoutUntil())) {
+            return;
+        }
         int attempts = data.getAttempts() + 1;
         if (attempts >= 5) {
             data.setLockoutUntil(LocalDateTime.now().plusMinutes(30));
@@ -122,8 +127,8 @@ public class UserController {
     private boolean isUserLocked(String username) {
         FailedLoginData data = loginFailures.get(username);
         return data != null
-            && data.getLockoutUntil() != null
-            && LocalDateTime.now().isBefore(data.getLockoutUntil());
+                && data.getLockoutUntil() != null
+                && LocalDateTime.now().isBefore(data.getLockoutUntil());
     }
 
     private void resetFailedLogins(String username) {
@@ -138,10 +143,22 @@ public class UserController {
             this.attempts = attempts;
             this.lockoutUntil = lockoutUntil;
         }
-        public int getAttempts() { return attempts; }
-        public void setAttempts(int attempts) { this.attempts = attempts; }
-        public LocalDateTime getLockoutUntil() { return lockoutUntil; }
-        public void setLockoutUntil(LocalDateTime lockoutUntil) { this.lockoutUntil = lockoutUntil; }
+
+        public int getAttempts() {
+            return attempts;
+        }
+
+        public void setAttempts(int attempts) {
+            this.attempts = attempts;
+        }
+
+        public LocalDateTime getLockoutUntil() {
+            return lockoutUntil;
+        }
+
+        public void setLockoutUntil(LocalDateTime lockoutUntil) {
+            this.lockoutUntil = lockoutUntil;
+        }
     }
 
     @GetMapping("/{userId}")
@@ -160,16 +177,6 @@ public class UserController {
         userService.logoutUser(userId);
     }
 
-    @PutMapping("/{userId}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void updateUser(
-            @PathVariable Long userId,
-            @RequestBody UserUpdateDTO userUpdateDTO
-    ) {
-        User userData = DTOMapper.INSTANCE.convertUserUpdateDTOtoEntity(userUpdateDTO);
-        userService.updateUser(userId, userData);
-    }
-
     @PostMapping("/{userId}/watchlist")
     @ResponseStatus(HttpStatus.CREATED)
     public String addToWatchlist(
@@ -182,11 +189,11 @@ public class UserController {
         }
         String addedOn = LocalDateTime.now().toString();
         String json = String.format(
-            "{\"movieId\":\"%s\",\"title\":\"%s\",\"posterPath\":\"%s\",\"addedOn\":\"%s\"}",
-            movieId,
-            payload.getOrDefault("title", ""),
-            payload.getOrDefault("posterPath", ""),
-            addedOn
+                "{\"movieId\":\"%s\",\"title\":\"%s\",\"posterPath\":\"%s\",\"addedOn\":\"%s\"}",
+                movieId,
+                payload.getOrDefault("title", ""),
+                payload.getOrDefault("posterPath", ""),
+                addedOn
         );
         userService.addMovieToWatchlist(userId, json);
         return "{\"message\": \"Movie added to watchlist\"}";
@@ -211,8 +218,8 @@ public class UserController {
     @ResponseStatus(HttpStatus.OK)
     public List<UserGetDTO> getAllUsers(@RequestParam(value = "username", required = false) String username) {
         List<User> users = (username != null && !username.trim().isEmpty())
-            ? userService.getUsersByUsername(username)
-            : userService.getUsers();
+                ? userService.getUsersByUsername(username)
+                : userService.getUsers();
         List<UserGetDTO> userGetDTOs = new ArrayList<>();
         for (User user : users) {
             userGetDTOs.add(DTOMapper.INSTANCE.convertEntityToUserGetDTO(user));
@@ -316,5 +323,25 @@ public class UserController {
         } catch (Exception e) {
             return new ResponseEntity<>(Collections.singletonMap("error", "An unexpected error occurred during OTP verification."), HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @GetMapping("/me")
+    @ResponseStatus(HttpStatus.OK)
+    public UserGetDTO getProfile(@RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.replaceFirst("^Bearer\\s+", "");
+        User current = userService.getUserByToken(token);
+        return DTOMapper.INSTANCE.convertEntityToUserGetDTO(current);
+    }
+
+    @PutMapping("/{userId}")
+    @ResponseStatus(HttpStatus.OK)
+    public UserGetDTO updateUser(
+            @PathVariable Long userId,
+            @RequestBody UserUpdateDTO userUpdateDTO
+    ) {
+        User userData = DTOMapper.INSTANCE.convertUserUpdateDTOtoEntity(userUpdateDTO);
+        userService.updateUser(userId, userData);
+        User updated = userService.getUserById(userId);
+        return DTOMapper.INSTANCE.convertEntityToUserGetDTO(updated);
     }
 }

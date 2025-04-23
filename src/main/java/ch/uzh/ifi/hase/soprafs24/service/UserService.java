@@ -19,7 +19,6 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import ch.uzh.ifi.hase.soprafs24.exceptions.CustomResponseException;
 
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import ch.uzh.ifi.hase.soprafs24.constant.UserStatus;
@@ -53,44 +52,43 @@ public class UserService {
         // Generate token and set initial status
         newUser.setToken(UUID.randomUUID().toString());
         newUser.setStatus(UserStatus.ONLINE);
-    
+
         // Validate email presence
         if (newUser.getEmail() == null || newUser.getEmail().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email is required.");
         }
-    
+
         // Check for duplicate username
         checkIfUserExists(newUser);
-    
+
         // Check for duplicate email explicitly
         User userByEmail = userRepository.findByEmail(newUser.getEmail());
         if (userByEmail != null) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use.");
         }
-    
+
         // Set creation date and save user to repository
         newUser.setCreationDate(LocalDate.now());
         newUser.setPassword(passwordEncoder.encode(newUser.getPassword()));
         newUser = userRepository.save(newUser);
         userRepository.flush();
-    
+
         // Send welcome email
         try {
             emailService.sendEmail(
-                newUser.getEmail(),
-                "Welcome to Flicks & Friends!",
-                "Thank you for registering. We're excited to have you on board!"
+                    newUser.getEmail(),
+                    "Welcome to Flicks & Friends!",
+                    "Thank you for registering. We're excited to have you on board!"
             );
             log.info("Welcome email sent to {}", newUser.getEmail());
         } catch (MessagingException e) {
             log.error("Failed to send welcome email to {}: {}", newUser.getEmail(), e.getMessage());
         }
-    
+
         // Log user creation details
         log.debug("Created Information for User: {}", newUser);
         return newUser;
     }
-    
 
     public String uploadProfilePicture(Long userId, MultipartFile file) throws IOException {
         User user = getUserById(userId);
@@ -118,16 +116,15 @@ public class UserService {
         if (user == null) {
             throw new CustomResponseException("User does not exist.");
         }
-    
+
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new CustomResponseException("Incorrect password.");
         }
-    
+
         user.setStatus(UserStatus.ONLINE);
         userRepository.save(user);
         return user;
     }
-    
 
     public User getUserById(Long userId) {
         return userRepository.findById(userId).orElse(null);
@@ -228,7 +225,7 @@ public class UserService {
     public User findByUsername(String username) {
         return userRepository.findByUsername(username);
     }
-    
+
     public List<User> getUsersByUsername(String username) {
         return userRepository.findByUsernameContaining(username);
     }
@@ -308,5 +305,16 @@ public class UserService {
     public boolean areFriends(Long userId, Long otherUserId) {
         User user = getUserById(userId);
         return user != null && user.getFriends().contains(otherUserId);
+    }
+
+    public User getUserByToken(String token) {
+        if (token == null || token.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authorization token is missing");
+        }
+        User user = userRepository.findByToken(token);
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid token");
+        }
+        return user;
     }
 }
