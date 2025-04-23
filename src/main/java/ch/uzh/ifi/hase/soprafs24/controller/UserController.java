@@ -1,26 +1,36 @@
 package ch.uzh.ifi.hase.soprafs24.controller;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
+
 import ch.uzh.ifi.hase.soprafs24.entity.User;
 import ch.uzh.ifi.hase.soprafs24.exceptions.CustomResponseException;
+import ch.uzh.ifi.hase.soprafs24.rest.dto.FriendWatchlistDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.UserGetDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.UserPostDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.UserUpdateDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.mapper.DTOMapper;
-import ch.uzh.ifi.hase.soprafs24.service.UserService;
 import ch.uzh.ifi.hase.soprafs24.service.OTPService;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.server.ResponseStatusException;
-import ch.uzh.ifi.hase.soprafs24.exceptions.CustomResponseException;
-import java.util.Collections;
-
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import ch.uzh.ifi.hase.soprafs24.service.UserService;
 
 @RestController
 @RequestMapping("/users")
@@ -44,7 +54,10 @@ public class UserController {
     }
 
     @PostMapping("/{userId}/upload-picture")
-    public ResponseEntity<Map<String, String>> uploadProfilePicture(@PathVariable Long userId, @RequestParam("file") MultipartFile file) {
+    public ResponseEntity<Map<String, String>> uploadProfilePicture(
+            @PathVariable Long userId,
+            @RequestParam("file") MultipartFile file
+    ) {
         try {
             String imageUrl = userService.uploadProfilePicture(userId, file);
             Map<String, String> response = new HashMap<>();
@@ -55,82 +68,62 @@ public class UserController {
         }
     }
 
-@PostMapping("/login")
-@ResponseStatus(HttpStatus.OK)
-public ResponseEntity<Map<String, Object>> loginUser(@RequestBody UserPostDTO userPostDTO) {
-    String username = userPostDTO.getUsername();
-    String password = userPostDTO.getPassword();
+    @PostMapping("/login")
+    @ResponseStatus(HttpStatus.OK)
+    public ResponseEntity<Map<String, Object>> loginUser(@RequestBody UserPostDTO userPostDTO) {
+        String username = userPostDTO.getUsername();
+        String password = userPostDTO.getPassword();
 
-    try {
-        // Check lockout status
-        if (isUserLocked(username)) {
-            throw new CustomResponseException("Too many failed attempts. Your account is locked. Please try again later.", HttpStatus.FORBIDDEN);
+        try {
+            if (isUserLocked(username)) {
+                throw new CustomResponseException(
+                    "Too many failed attempts. Your account is locked. Please try again later.",
+                    HttpStatus.FORBIDDEN
+                );
+            }
+
+            User userInput = DTOMapper.INSTANCE.convertUserPostDTOtoEntity(userPostDTO);
+            User loggedInUser = userService.loginUser(userInput.getUsername(), userInput.getPassword());
+
+            resetFailedLogins(username);
+            otpService.sendOTP(loggedInUser.getUsername());
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "OTP sent to your registered email.");
+            response.put("userId", loggedInUser.getId());
+
+            return ResponseEntity.ok(response);
+
+        } catch (CustomResponseException e) {
+            handleFailedLogin(username);
+            throw e;
+        } catch (IllegalArgumentException e) {
+            handleFailedLogin(username);
+            throw new CustomResponseException("Login failed: invalid username or password.", HttpStatus.UNAUTHORIZED);
+        } catch (Exception e) {
+            handleFailedLogin(username);
+            throw new CustomResponseException("An unexpected error occurred. Please try again.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
-        User userInput = DTOMapper.INSTANCE.convertUserPostDTOtoEntity(userPostDTO);
-        User loggedInUser = userService.loginUser(userInput.getUsername(), userInput.getPassword());
-
-        // Reset failed login attempts on successful login
-        resetFailedLogins(username);
-
-        // Send OTP after successful login
-        otpService.sendOTP(loggedInUser.getUsername());
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", "OTP sent to your registered email.");
-        response.put("userId", loggedInUser.getId());
-
-        return ResponseEntity.ok(response);
-
-    } catch (CustomResponseException e) {
-        handleFailedLogin(username);
-        throw e; // Propagating CustomResponseException to the global exception handler
-    } catch (IllegalArgumentException e) {
-        handleFailedLogin(username);
-        throw new CustomResponseException("Login failed: invalid username or password.", HttpStatus.UNAUTHORIZED);
-    } catch (Exception e) {
-        handleFailedLogin(username);
-        throw new CustomResponseException("An unexpected error occurred. Please try again.", HttpStatus.INTERNAL_SERVER_ERROR);
     }
-}
 
     private void handleFailedLogin(String username) {
-        System.out.println("Processing failed login for username: " + username);
-    
-        // Use UserService to check if user exists
         User user = userService.findByUsername(username);
-        if (user == null) {
-            System.out.println("User " + username + " does not exist. Skipping failed login processing.");
-            return; // Exit early for non-registered users
-        }
-    
+        if (user == null) return;
         FailedLoginData data = loginFailures.getOrDefault(username, new FailedLoginData(0, null));
-    
-        // Check if user is already locked
-        if (data.getLockoutUntil() != null && LocalDateTime.now().isBefore(data.getLockoutUntil())) {
-            System.out.println("User " + username + " is already locked until: " + data.getLockoutUntil());
-            return; // Exit early to prevent updates
-        }
-    
+        if (data.getLockoutUntil() != null && LocalDateTime.now().isBefore(data.getLockoutUntil())) return;
         int attempts = data.getAttempts() + 1;
         if (attempts >= 5) {
             data.setLockoutUntil(LocalDateTime.now().plusMinutes(30));
-            System.out.println("User " + username + " is now locked until: " + data.getLockoutUntil());
         }
         data.setAttempts(attempts);
         loginFailures.put(username, data);
-        System.out.println("Updated failed attempts for " + username + ": " + attempts);
     }
-        
 
     private boolean isUserLocked(String username) {
         FailedLoginData data = loginFailures.get(username);
-        if (data != null && data.getLockoutUntil() != null) {
-            if (LocalDateTime.now().isBefore(data.getLockoutUntil())) {
-                return true;
-            }
-        }
-        return false;
+        return data != null
+            && data.getLockoutUntil() != null
+            && LocalDateTime.now().isBefore(data.getLockoutUntil());
     }
 
     private void resetFailedLogins(String username) {
@@ -145,24 +138,11 @@ public ResponseEntity<Map<String, Object>> loginUser(@RequestBody UserPostDTO us
             this.attempts = attempts;
             this.lockoutUntil = lockoutUntil;
         }
-
-        public int getAttempts() {
-            return attempts;
-        }
-
-        public void setAttempts(int attempts) {
-            this.attempts = attempts;
-        }
-
-        public LocalDateTime getLockoutUntil() {
-            return lockoutUntil;
-        }
-
-        public void setLockoutUntil(LocalDateTime lockoutUntil) {
-            this.lockoutUntil = lockoutUntil;
-        }
+        public int getAttempts() { return attempts; }
+        public void setAttempts(int attempts) { this.attempts = attempts; }
+        public LocalDateTime getLockoutUntil() { return lockoutUntil; }
+        public void setLockoutUntil(LocalDateTime lockoutUntil) { this.lockoutUntil = lockoutUntil; }
     }
-
 
     @GetMapping("/{userId}")
     @ResponseStatus(HttpStatus.OK)
@@ -177,29 +157,37 @@ public ResponseEntity<Map<String, Object>> loginUser(@RequestBody UserPostDTO us
     @PutMapping("/{userId}/logout")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void logoutUser(@PathVariable Long userId) {
-        System.out.println("Received userId for logout: " + userId); // Log the received userId
         userService.logoutUser(userId);
-    }    
+    }
 
     @PutMapping("/{userId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void updateUser(@PathVariable Long userId, @RequestBody UserUpdateDTO userUpdateDTO) {
+    public void updateUser(
+            @PathVariable Long userId,
+            @RequestBody UserUpdateDTO userUpdateDTO
+    ) {
         User userData = DTOMapper.INSTANCE.convertUserUpdateDTOtoEntity(userUpdateDTO);
         userService.updateUser(userId, userData);
     }
 
     @PostMapping("/{userId}/watchlist")
     @ResponseStatus(HttpStatus.CREATED)
-    public String addToWatchlist(@PathVariable Long userId, @RequestBody Map<String, String> payload) {
+    public String addToWatchlist(
+            @PathVariable Long userId,
+            @RequestBody Map<String, String> payload
+    ) {
         String movieId = payload.get("movieId");
-        String title = payload.get("title");
-        String posterPath = payload.get("posterPath");
         if (movieId == null || movieId.trim().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "movieId is required");
         }
         String addedOn = LocalDateTime.now().toString();
-        String json = String.format("{\"movieId\":\"%s\",\"title\":\"%s\",\"posterPath\":\"%s\",\"addedOn\":\"%s\"}",
-            movieId, title != null ? title : "", posterPath != null ? posterPath : "", addedOn);
+        String json = String.format(
+            "{\"movieId\":\"%s\",\"title\":\"%s\",\"posterPath\":\"%s\",\"addedOn\":\"%s\"}",
+            movieId,
+            payload.getOrDefault("title", ""),
+            payload.getOrDefault("posterPath", ""),
+            addedOn
+        );
         userService.addMovieToWatchlist(userId, json);
         return "{\"message\": \"Movie added to watchlist\"}";
     }
@@ -212,7 +200,10 @@ public ResponseEntity<Map<String, Object>> loginUser(@RequestBody UserPostDTO us
 
     @DeleteMapping("/{userId}/watchlist/{movieId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void removeFromWatchlist(@PathVariable Long userId, @PathVariable String movieId) {
+    public void removeFromWatchlist(
+            @PathVariable Long userId,
+            @PathVariable String movieId
+    ) {
         userService.removeMovieFromWatchlist(userId, movieId);
     }
 
@@ -220,8 +211,8 @@ public ResponseEntity<Map<String, Object>> loginUser(@RequestBody UserPostDTO us
     @ResponseStatus(HttpStatus.OK)
     public List<UserGetDTO> getAllUsers(@RequestParam(value = "username", required = false) String username) {
         List<User> users = (username != null && !username.trim().isEmpty())
-                ? userService.getUsersByUsername(username)
-                : userService.getUsers();
+            ? userService.getUsersByUsername(username)
+            : userService.getUsers();
         List<UserGetDTO> userGetDTOs = new ArrayList<>();
         for (User user : users) {
             userGetDTOs.add(DTOMapper.INSTANCE.convertEntityToUserGetDTO(user));
@@ -231,26 +222,34 @@ public ResponseEntity<Map<String, Object>> loginUser(@RequestBody UserPostDTO us
 
     @PostMapping("/{userId}/friendrequests")
     @ResponseStatus(HttpStatus.CREATED)
-    public String sendFriendRequest(@PathVariable Long userId, @RequestBody Map<String, String> payload) {
+    public String sendFriendRequest(
+            @PathVariable Long userId,
+            @RequestBody Map<String, String> payload
+    ) {
         String fromUserIdStr = payload.get("fromUserId");
         if (fromUserIdStr == null || fromUserIdStr.trim().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "fromUserId is required");
         }
-        Long fromUserId = Long.parseLong(fromUserIdStr);
-        userService.sendFriendRequest(userId, fromUserId);
+        userService.sendFriendRequest(userId, Long.parseLong(fromUserIdStr));
         return "{\"message\": \"Friend request sent\"}";
     }
 
     @PutMapping("/{userId}/friendrequests/{fromUserId}/accept")
     @ResponseStatus(HttpStatus.OK)
-    public String acceptFriendRequest(@PathVariable Long userId, @PathVariable Long fromUserId) {
+    public String acceptFriendRequest(
+            @PathVariable Long userId,
+            @PathVariable Long fromUserId
+    ) {
         userService.acceptFriendRequest(userId, fromUserId);
         return "{\"message\": \"Friend request accepted\"}";
     }
 
     @DeleteMapping("/{userId}/friendrequests/{fromUserId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void declineFriendRequest(@PathVariable Long userId, @PathVariable Long fromUserId) {
+    public void declineFriendRequest(
+            @PathVariable Long userId,
+            @PathVariable Long fromUserId
+    ) {
         userService.declineFriendRequest(userId, fromUserId);
     }
 
@@ -269,6 +268,23 @@ public ResponseEntity<Map<String, Object>> loginUser(@RequestBody UserPostDTO us
             friendDTOs.add(DTOMapper.INSTANCE.convertEntityToUserGetDTO(friend));
         }
         return friendDTOs;
+    }
+
+    @GetMapping("/{userId}/friends/watchlists")
+    @ResponseStatus(HttpStatus.OK)
+    public List<FriendWatchlistDTO> getFriendsWatchlists(@PathVariable Long userId) {
+        List<User> friends = userService.getFriends(userId);
+        List<FriendWatchlistDTO> result = new ArrayList<>();
+        for (User friend : friends) {
+            if (Boolean.TRUE.equals(friend.isSharable())) {
+                FriendWatchlistDTO dto = new FriendWatchlistDTO();
+                dto.setFriendId(friend.getId());
+                dto.setUsername(friend.getUsername());
+                dto.setWatchlist(friend.getWatchlist());
+                result.add(dto);
+            }
+        }
+        return result;
     }
 
     @PostMapping("/otp/send")
