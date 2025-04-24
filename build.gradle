@@ -1,10 +1,10 @@
 plugins {
-    id 'org.springframework.boot' version '2.6.12' // Updated version for compatibility with your local setup
+    id 'org.springframework.boot' version '2.6.12' 
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
     id 'java'
     id 'idea'
     id 'jacoco'
-    id "org.sonarqube" version "6.0.1.5171" // Added SonarQube plugin
+    id "org.sonarqube" version "6.0.1.5171" 
 }
 
 group = 'ch.uzh.ifi.hase'
@@ -46,7 +46,7 @@ dependencies {
 
     // Database Drivers
     runtimeOnly 'com.h2database:h2'
-    runtimeOnly 'org.postgresql:postgresql' // Added PostgreSQL driver for consistency with local
+    runtimeOnly 'org.postgresql:postgresql' 
 
     // Security and Validation Dependencies (from local)
     implementation 'org.springframework.boot:spring-boot-starter-validation'
@@ -56,13 +56,13 @@ dependencies {
 
     // JavaMail API for Email Service
     implementation 'com.sun.mail:jakarta.mail:2.0.1'
-    implementation 'jakarta.activation:jakarta.activation-api:2.0.1' // To fix missing DataHandler error
+    implementation 'jakarta.activation:jakarta.activation-api:2.0.1' 
 
     // Testing Dependencies
     testImplementation('org.springframework.boot:spring-boot-starter-test') {
         exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
     }
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2' // Updated to match local version
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2' 
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
 }
 

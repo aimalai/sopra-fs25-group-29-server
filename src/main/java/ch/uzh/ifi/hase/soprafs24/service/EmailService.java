@@ -18,10 +18,10 @@ public class EmailService {
 
     private final Logger log = LoggerFactory.getLogger(EmailService.class);
 
-    @Value("${spring.mail.username}") // Your Gmail address
+    @Value("${spring.mail.username}") 
     private String emailUsername;
 
-    @Value("${spring.mail.password}") // App Password from Google
+    @Value("${spring.mail.password}") 
     private String emailPassword;
 
     public void sendOTP(String recipientEmail, String otp) {
@@ -42,16 +42,16 @@ public class EmailService {
         properties.put("mail.smtp.port", "587");
         properties.put("mail.smtp.auth", "true");
         properties.put("mail.smtp.starttls.enable", "true");
-        properties.put("mail.smtp.ssl.protocols", "TLSv1.2"); // NEW: Force TLSv1.2
-        properties.put("mail.smtp.ssl.trust", "smtp.gmail.com"); // NEW: Trust Gmail's SSL
+        properties.put("mail.smtp.ssl.protocols", "TLSv1.2"); 
+        properties.put("mail.smtp.ssl.trust", "smtp.gmail.com"); 
         
-        // Debugging to capture errors in logs
+        // Debug to capture errors in logs
         Session session = Session.getInstance(properties, new Authenticator() {
             protected jakarta.mail.PasswordAuthentication getPasswordAuthentication() {
                 return new jakarta.mail.PasswordAuthentication(emailUsername, emailPassword);
             }
         });
-        session.setDebug(true); // NEW: Enable debugging for troubleshooting
+        session.setDebug(true); 
 
         Message message = new MimeMessage(session);
         message.setFrom(new InternetAddress(emailUsername));

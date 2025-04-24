@@ -10,16 +10,16 @@ import java.util.Optional;
 @Repository
 public interface InviteRepository extends JpaRepository<Invite, Long> {
 
-    // ✅ Fetch invites by Watch Party ID
+    // fetch invites by Watch Party ID
     List<Invite> findByWatchPartyId(Long watchPartyId);
 
-    // ✅ Fetch invite by Watch Party ID and Username
+    // fetch invite by Watch Party ID and Username
     List<Invite> findByWatchPartyIdAndUsername(Long watchPartyId, String username);
 
     /**
-     * 🔥 New query for polling latest invite responses.
+     * New query for polling latest invite responses.
      * @param watchPartyId - Watch Party ID.
      * @return List of invites ordered by latest updates.
      */
-    List<Invite> findByWatchPartyIdOrderByUpdatedAtDesc(Long watchPartyId); // ✅ Uses updatedAt for polling accuracy
+    List<Invite> findByWatchPartyIdOrderByUpdatedAtDesc(Long watchPartyId); // using updatedAt for polling accuracy
 }

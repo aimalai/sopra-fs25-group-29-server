@@ -31,7 +31,7 @@ public class WatchPartyController {
         this.userService = userService;
     }
 
-    // Existing functionality: Create a watch party
+    // Create a watch party
     @PostMapping("")
     @ResponseStatus(HttpStatus.CREATED)
     public WatchParty createWatchParty(@RequestBody Map<String, String> payload) {
@@ -55,7 +55,7 @@ public class WatchPartyController {
         }
     }
 
-    // Existing functionality: Get watch parties (all or by organizer ID)
+    // Get watch parties (all or by organizer ID)
     @GetMapping("")
     public List<WatchParty> getWatchParties(@RequestParam(required = false) Long organizerId) {
         if (organizerId != null) {
@@ -65,7 +65,7 @@ public class WatchPartyController {
         }
     }
 
-    // New functionality: Invite a user to a watch party
+    // Invite a user to a watch party
     @PostMapping("/{watchPartyId}/invites")
     public ResponseEntity<Map<String, String>> inviteUser(
             @PathVariable Long watchPartyId,
@@ -80,14 +80,14 @@ public class WatchPartyController {
                 : ResponseEntity.ok(response);
     }    
 
-    // New functionality: Fetch the list of invited users for a specific watch party
+    // Fetch the list of invited users for a specific watch party
     @GetMapping("/{watchPartyId}/invites")
     public ResponseEntity<List<String>> getInvitedUsers(@PathVariable Long watchPartyId) {
         List<String> invitedUsers = watchPartyService.getInvitedUsers(watchPartyId);
         return new ResponseEntity<>(invitedUsers, HttpStatus.OK);
     }
 
-    // New functionality: Handle invite response (accept or decline)
+    // Handle invite response (accept or decline)
     @GetMapping("/{watchPartyId}/invite-response")
     public ResponseEntity<String> handleInviteResponse(
             @PathVariable Long watchPartyId,
@@ -100,7 +100,7 @@ public class WatchPartyController {
                 : ResponseEntity.status(HttpStatus.NOT_FOUND).body("Failed to update invite response.");
     }
 
-    // New functionality: Poll latest invite status updates
+    // Poll latest invite status updates
     @GetMapping("/{watchPartyId}/latest-invite-status")
     public ResponseEntity<List<String>> getLatestInviteResponses(@PathVariable Long watchPartyId) {
         List<String> latestResponses = watchPartyService.getLatestInviteResponses(watchPartyId);

@@ -41,7 +41,7 @@ public class WatchPartyService {
         this.inviteRepository = inviteRepository;
     }
 
-    // Existing functionality: Create a new watch party
+    // Create a new watch party
     public WatchParty createWatchParty(User organizer, String title, String contentLink, String description, LocalDateTime scheduledTime) {
         ZonedDateTime scheduledTimeUTC = scheduledTime.atZone(ZoneId.of("UTC"));
         ZonedDateTime scheduledTimeLocal = scheduledTimeUTC.withZoneSameInstant(ZoneId.systemDefault());
@@ -59,18 +59,18 @@ public class WatchPartyService {
         return watchPartyRepository.save(watchParty);
     }
 
-    // Existing functionality: Get watch parties by organizer ID
+    // Get watch parties by organizer ID
     public List<WatchParty> getWatchPartiesByOrganizer(Long organizerId) {
         return watchPartyRepository.findByOrganizer_Id(organizerId);
     }
 
-    // Existing functionality: Get all watch parties
+    // Get all watch parties
     public List<WatchParty> getAllWatchParties() {
         return watchPartyRepository.findAll();
     }
 
 
-// New functionality: Invite a user to a watch party
+// Invite a user to a watch party
 public String inviteUserToWatchParty(Long watchPartyId, String username, Long inviterId) {
     System.out.println("Attempting to find user by username: " + username);
 
@@ -102,7 +102,7 @@ public String inviteUserToWatchParty(Long watchPartyId, String username, Long in
 }
 
 
-    // New functionality: Send email invite via SMTP
+    //  Send email invite via SMTP
     private void sendInviteEmail(String email, Long watchPartyId, String username) {
         String acceptLink = baseUrl + "/api/watchparties/" + watchPartyId + "/invite-response?username=" + username + "&status=accepted";
         String declineLink = baseUrl + "/api/watchparties/" + watchPartyId + "/invite-response?username=" + username + "&status=declined";
@@ -139,7 +139,7 @@ public String inviteUserToWatchParty(Long watchPartyId, String username, Long in
         }
     }
 
-    // New functionality: Fetch list of invited users
+    // Fetch list of invited users
     public List<String> getInvitedUsers(Long watchPartyId) {
         return inviteRepository.findByWatchPartyId(watchPartyId)
                 .stream()
@@ -147,7 +147,7 @@ public String inviteUserToWatchParty(Long watchPartyId, String username, Long in
                 .toList();
     }
 
-    // New functionality: Update invite response status
+    // Update invite response status
     public boolean updateInviteStatus(Long watchPartyId, String username, String status) {
         List<Invite> invites = inviteRepository.findByWatchPartyIdAndUsername(watchPartyId, username);
 
@@ -161,7 +161,7 @@ public String inviteUserToWatchParty(Long watchPartyId, String username, Long in
         return false;
     }
 
-    // New functionality: Fetch latest invite responses
+    // Fetch latest invite responses
     public List<String> getLatestInviteResponses(Long watchPartyId) {
         return inviteRepository.findByWatchPartyId(watchPartyId)
                 .stream()

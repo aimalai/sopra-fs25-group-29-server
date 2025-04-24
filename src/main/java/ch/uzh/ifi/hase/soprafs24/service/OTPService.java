@@ -28,7 +28,7 @@ public class OTPService {
 
     // Send OTP to user
     public void sendOTP(String username) {
-        User user = retrieveUserByUsername(username); // Using helper method
+        User user = retrieveUserByUsername(username); 
         String otp = generateOTP();
         otpStore.put(username, new OTPEntry(otp, LocalDateTime.now().plusMinutes(5)));
 
@@ -62,7 +62,7 @@ public class OTPService {
         HashMap<String, String> response = new HashMap<>();
         response.put("message", "OTP verified successfully");
         response.put("token", "OTP verified successfully for username: " + username);
-        response.put("userId", String.valueOf(user.getId())); // Include userId in response
+        response.put("userId", String.valueOf(user.getId())); 
 
         return response;
     }
@@ -84,7 +84,7 @@ public class OTPService {
         return user;
     }
 
-    // Internal class to store OTP and expiration time
+    // store OTP and expiration time
     private static class OTPEntry {
         String otp;
         LocalDateTime expirationTime;

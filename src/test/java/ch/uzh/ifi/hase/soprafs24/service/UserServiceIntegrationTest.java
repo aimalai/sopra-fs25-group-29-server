@@ -44,7 +44,7 @@ public class UserServiceIntegrationTest {
         User testUser = new User();
         testUser.setPassword("User.1234");
         testUser.setUsername("testUsername");
-        testUser.setEmail("test@example.com"); // Added email field
+        testUser.setEmail("test@example.com"); 
 
         // when
         User createdUser = userService.createUser(testUser);
@@ -65,14 +65,14 @@ public class UserServiceIntegrationTest {
         User testUser = new User();
         testUser.setPassword("User.1234");
         testUser.setUsername("testUsername");
-        testUser.setEmail("test@example.com"); // Added email field
+        testUser.setEmail("test@example.com"); 
         User createdUser = userService.createUser(testUser);
 
         // attempt to create second user with same username
         User testUser2 = new User();
         testUser2.setPassword("User.1234");
         testUser2.setUsername("testUsername");
-        testUser2.setEmail("duplicate@example.com"); // Added email field
+        testUser2.setEmail("duplicate@example.com"); 
 
         // check that an error is thrown
         assertThrows(ResponseStatusException.class, () -> userService.createUser(testUser2));

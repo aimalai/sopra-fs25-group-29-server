@@ -31,9 +31,9 @@ public class Invite implements Serializable {
     private LocalDateTime createdAt = LocalDateTime.now();
 
     @Column(nullable = false)
-    private LocalDateTime updatedAt = LocalDateTime.now(); // 🔥 Added field for polling
+    private LocalDateTime updatedAt = LocalDateTime.now(); // field for polling
 
-    // ✅ Getters and Setters
+    // Getters and Setters
     public Long getId() {
         return id;
     }
@@ -64,7 +64,7 @@ public class Invite implements Serializable {
 
     public void setStatus(String status) {
         this.status = status;
-        this.updatedAt = LocalDateTime.now(); // 🔥 Ensure updated timestamp changes when status updates
+        this.updatedAt = LocalDateTime.now(); // Ensure updated timestamp changes when status updates
     }
 
     public LocalDateTime getCreatedAt() {

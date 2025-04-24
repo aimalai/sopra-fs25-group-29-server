@@ -25,7 +25,7 @@ public class UserRepositoryIntegrationTest {
         User user = new User();
         user.setPassword("User.1234");
         user.setUsername("firstname@lastname");
-        user.setEmail("test@example.com"); // Added email field
+        user.setEmail("test@example.com"); 
         user.setStatus(UserStatus.ONLINE);
         user.setToken("1");
 
