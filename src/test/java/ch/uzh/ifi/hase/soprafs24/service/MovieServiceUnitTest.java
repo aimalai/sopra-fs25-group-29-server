@@ -6,30 +6,32 @@ import static org.mockito.Mockito.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.*;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 @ExtendWith(MockitoExtension.class)
 class MovieServiceUnitTest {
 
-    @Spy @InjectMocks
     private MovieService service;
 
     @Mock(lenient = true)
     private RestTemplate restTemplate;
 
+    @Mock
+    private RestTemplateBuilder builder;
+
     private final ObjectMapper mapper = new ObjectMapper();
 
     @BeforeEach
     void init() {
-        ReflectionTestUtils.setField(service, "restTemplate", restTemplate);
+        when(builder.build()).thenReturn(restTemplate);
+        service = new MovieService(builder);
     }
 
     @Test

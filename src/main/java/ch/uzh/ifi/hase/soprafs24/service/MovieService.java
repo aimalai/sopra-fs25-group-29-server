@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -23,8 +24,12 @@ public class MovieService {
     @Value("${tmdb.api.key}")
     private String apiKey;
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    public MovieService(RestTemplateBuilder builder) {
+        this.restTemplate = builder.build();
+    }
 
     public String searchMovies(String query) {
         String url = UriComponentsBuilder
@@ -54,40 +59,35 @@ public class MovieService {
             JsonNode tvNode = objectMapper.readTree(tvResponse);
             ArrayNode movieResults = (ArrayNode) movieNode.get("results");
             ArrayNode tvResults = (ArrayNode) tvNode.get("results");
-
             for (JsonNode movie : movieResults) {
                 ((ObjectNode) movie).put("media_type", "movie");
             }
             for (JsonNode tv : tvResults) {
                 ((ObjectNode) tv).put("media_type", "tv");
             }
-
             ArrayNode combined = objectMapper.createArrayNode();
             combined.addAll(movieResults);
             combined.addAll(tvResults);
-
             List<JsonNode> filteredSorted = StreamSupport.stream(combined.spliterator(), false)
                     .filter(r -> !onlyComplete || (
-                            r.hasNonNull("poster_path") && !r.get("poster_path").asText().isEmpty() &&
+                            r.hasNonNull("poster_path") &&
+                            !r.get("poster_path").asText().isEmpty() &&
                             ((r.hasNonNull("release_date") && !r.get("release_date").asText().isEmpty()) ||
                              (r.hasNonNull("first_air_date") && !r.get("first_air_date").asText().isEmpty())) &&
-                            r.hasNonNull("overview") && !r.get("overview").asText().isEmpty()
+                            r.hasNonNull("overview") &&
+                            !r.get("overview").asText().isEmpty()
                     ))
                     .sorted(getComparator(sort))
                     .collect(Collectors.toList());
-
             int totalCount = filteredSorted.size();
             int fromIndex = Math.min((page - 1) * pageSize, totalCount);
             int toIndex = Math.min(fromIndex + pageSize, totalCount);
             List<JsonNode> paginatedResults = filteredSorted.subList(fromIndex, toIndex);
-
             ArrayNode paginatedArray = objectMapper.createArrayNode();
             paginatedArray.addAll(paginatedResults);
-
             ObjectNode responseNode = objectMapper.createObjectNode();
             responseNode.set("results", paginatedArray);
             responseNode.put("totalCount", totalCount);
-
             return responseNode.toString();
         } catch (Exception e) {
             throw new RuntimeException("Error combining search results", e);
@@ -95,13 +95,15 @@ public class MovieService {
     }
 
     private Comparator<JsonNode> getComparator(String sort) {
-        if (sort == null) return Comparator.comparingInt(a -> 0);
+        if (sort == null) {
+            return Comparator.comparingInt(a -> 0);
+        }
         return switch (sort) {
             case "popularity" -> Comparator.comparingDouble(a -> -a.path("popularity").asDouble());
-            case "rating" -> Comparator.comparingDouble(a -> -a.path("vote_average").asDouble());
-            case "newest" -> Comparator.comparing(this::extractDate).reversed();
-            case "oldest" -> Comparator.comparing(this::extractDate);
-            default -> Comparator.comparingInt(a -> 0);
+            case "rating"     -> Comparator.comparingDouble(a -> -a.path("vote_average").asDouble());
+            case "newest"     -> Comparator.comparing(this::extractDate).reversed();
+            case "oldest"     -> Comparator.comparing(this::extractDate);
+            default           -> Comparator.comparingInt(a -> 0);
         };
     }
 
@@ -151,7 +153,7 @@ public class MovieService {
                 .buildAndExpand(id)
                 .encode(StandardCharsets.UTF_8)
                 .toUriString();
-
+                
         String creditsUrl = UriComponentsBuilder
                 .fromUriString("https://api.themoviedb.org/3/tv/{id}/credits")
                 .queryParam("api_key", apiKey)
@@ -209,8 +211,8 @@ public class MovieService {
             String posterPath = detailsNode.get("poster_path").asText();
 
             return String.format(
-                    "{\"id\":%s,\"title\":\"%s\",\"description\":\"%s\",\"ratings\":%.1f,\"vote_count\":%d," +
-                            "\"release_date\":\"%s\",\"poster_path\":\"%s\",\"genre\":\"%s\",\"cast\":\"%s\"}",
+                    "{\"id\":%s,\"title\":\"%s\",\"description\":\"%s\",\"ratings\":%.1f,\"vote_count\":%d,"
+                            + "\"release_date\":\"%s\",\"poster_path\":\"%s\",\"genre\":\"%s\",\"cast\":\"%s\"}",
                     detailsNode.get("id").asText(),
                     title,
                     description.replace("\"", "\\\""),
@@ -224,5 +226,13 @@ public class MovieService {
         } catch (Exception e) {
             throw new RuntimeException("Error fetching details", e);
         }
+    }
+
+    public String getTrending() {
+        String url = UriComponentsBuilder
+                .fromUriString("https://api.themoviedb.org/3/trending/all/day")
+                .queryParam("api_key", apiKey)
+                .toUriString();
+        return restTemplate.getForObject(url, String.class);
     }
 }
