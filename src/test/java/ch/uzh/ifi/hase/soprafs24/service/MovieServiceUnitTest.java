@@ -115,9 +115,9 @@ class MovieServiceUnitTest {
     @Test
     void searchCombined_ok() throws Exception {
         when(restTemplate.getForObject(contains("/search/movie"), eq(String.class)))
-            .thenReturn("{\"results\":[{\"id\":1}],\"total_pages\":1}");
+                .thenReturn("{\"results\":[{\"id\":1}],\"total_pages\":1}");
         when(restTemplate.getForObject(contains("/search/tv"), eq(String.class)))
-            .thenReturn("{\"results\":[],\"total_pages\":0}");
+                .thenReturn("{\"results\":[],\"total_pages\":0}");
 
         String combined = service.searchCombined("q", null, false, 1, 5);
         JsonNode node = mapper.readTree(combined);
@@ -132,11 +132,23 @@ class MovieServiceUnitTest {
     @Test
     void searchCombined_error() {
         when(restTemplate.getForObject(anyString(), eq(String.class)))
-            .thenThrow(new RestClientException("fail"));
+                .thenThrow(new RestClientException("fail"));
 
-        RuntimeException ex = assertThrows(RuntimeException.class, () ->
-            service.searchCombined("q", null, false, 1, 5)
+        RuntimeException ex = assertThrows(RuntimeException.class, ()
+                -> service.searchCombined("q", null, false, 1, 5)
         );
         assertEquals("Error combining search results", ex.getMessage());
+    }
+
+    @Test
+    void getTrending_returnsJson() {
+        String trendingJson = "{ \"results\": [ { \"id\": 123, \"title\": \"Test Movie\" } ] }";
+        when(restTemplate.getForObject(contains("/trending"), eq(String.class)))
+                .thenReturn(trendingJson);
+
+        String result = service.getTrending();
+
+        assertEquals(trendingJson, result);
+        verify(restTemplate, times(1)).getForObject(contains("/trending"), eq(String.class));
     }
 }
