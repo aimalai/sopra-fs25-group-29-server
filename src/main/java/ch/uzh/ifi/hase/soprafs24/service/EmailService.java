@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import jakarta.mail.*;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
-import jakarta.mail.MessagingException;
+
 import java.util.Properties;
 
 /**
@@ -36,29 +36,32 @@ public class EmailService {
         }
     }
 
-    public void sendEmail(String recipient, String subject, String body) throws MessagingException {
-        Properties properties = new Properties();
-        properties.put("mail.smtp.host", "smtp.gmail.com");
-        properties.put("mail.smtp.port", "587");
-        properties.put("mail.smtp.auth", "true");
-        properties.put("mail.smtp.starttls.enable", "true");
-        properties.put("mail.smtp.ssl.protocols", "TLSv1.2"); 
-        properties.put("mail.smtp.ssl.trust", "smtp.gmail.com"); 
-        
-        // Debug to capture errors in logs
-        Session session = Session.getInstance(properties, new Authenticator() {
-            protected jakarta.mail.PasswordAuthentication getPasswordAuthentication() {
-                return new jakarta.mail.PasswordAuthentication(emailUsername, emailPassword);
-            }
-        });
-        session.setDebug(true); 
+public void sendEmail(String recipient, String subject, String body) throws MessagingException {
+    Properties properties = new Properties();
+    properties.put("mail.smtp.host", "smtp.gmail.com");
+    properties.put("mail.smtp.port", "587");
+    properties.put("mail.smtp.auth", "true");
+    properties.put("mail.smtp.starttls.enable", "true");
+    properties.put("mail.smtp.ssl.protocols", "TLSv1.2"); 
+    properties.put("mail.smtp.ssl.trust", "smtp.gmail.com"); 
+    
+    // Debug to capture errors in logs
+    Session session = Session.getInstance(properties, new Authenticator() {
+        protected jakarta.mail.PasswordAuthentication getPasswordAuthentication() {
+            return new jakarta.mail.PasswordAuthentication(emailUsername, emailPassword);
+        }
+    });
+    session.setDebug(true); 
 
-        Message message = new MimeMessage(session);
-        message.setFrom(new InternetAddress(emailUsername));
-        message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(recipient));
-        message.setSubject(subject);
-        message.setText(body);
+    Message message = new MimeMessage(session);
+    message.setFrom(new InternetAddress(emailUsername));
+    message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(recipient));
+    message.setSubject(subject);
+    
+    // Set HTML content
+    message.setContent(body, "text/html");
 
-        Transport.send(message);
-    }
+    Transport.send(message);
+}
+
 }

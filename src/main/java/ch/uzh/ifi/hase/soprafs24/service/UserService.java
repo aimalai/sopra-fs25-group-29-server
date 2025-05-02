@@ -75,16 +75,29 @@ public class UserService {
 
         // Send welcome email
         try {
-            emailService.sendEmail(
-                    newUser.getEmail(),
-                    "Welcome to Flicks & Friends!",
-                    "Thank you for registering. We're excited to have you on board!"
-            );
+            String emailContent = "<html><head><meta charset='UTF-8'></head><body>"
+                                + "<div style='font-family: Arial, 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif; color: #000000; text-align: center;'>"
+                                + "<h2 style='color: #ffcc00;'>Welcome to Flicks & Friends!</h2>"
+                                + "<p style='color: #444444; font-size: 16px;'>Hey there, movie buff! &#x1F31F;</p>" // 🌟 Unicode Emoji
+                                + "<p style='color: #000000; font-size: 14px;'>"
+                                + "We're rolling out the red carpet for you at <span style='color: #ffcc00;'>Flicks & Friends!</span> &#x1F3A5;✨" // 🎥 Unicode Emoji
+                                + "</p>"
+                                + "<p style='color: #444444; font-size: 14px;'>"
+                                + "Get ready for epic movie nights, awesome discussions, and an amazing community of fellow film lovers."
+                                + "</p>"
+                                + "<p style='color: #000000; font-size: 14px;'>"
+                                + "Pop the popcorn, find your favorite flick, and let’s make some cinematic magic together! 🔹&#x1F37F;" // 🔹🍿 Alternative Emoji
+                                + "</p>"
+                                + "<p style='color: #ffcc00; font-size: 18px; font-weight: bold;'>See you in the spotlight! &#x1F4A1;</p>" // 💡 Unicode Emoji
+                                + "<p style='color: #444444; font-size: 14px;'>&#x1F39F; The Flicks & Friends Team</p>" // 🎟 Unicode Emoji
+                                + "</div></body></html>";
+        
+            emailService.sendEmail(newUser.getEmail(), "Welcome to Flicks & Friends!", emailContent);
             log.info("Welcome email sent to {}", newUser.getEmail());
         } catch (MessagingException e) {
             log.error("Failed to send welcome email to {}: {}", newUser.getEmail(), e.getMessage());
         }
-
+        
         // Log user creation details
         log.debug("Created Information for User: {}", newUser);
         return newUser;
