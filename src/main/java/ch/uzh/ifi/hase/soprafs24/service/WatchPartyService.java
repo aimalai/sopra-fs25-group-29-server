@@ -11,6 +11,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import jakarta.mail.*;
 import jakarta.mail.internet.*;
@@ -30,12 +32,12 @@ public class WatchPartyService {
     private final InviteRepository inviteRepository;
     @Value("${app.backend.base-url}")
     private String baseUrl;
-
+    
 
     @Autowired
     public WatchPartyService(WatchPartyRepository watchPartyRepository,
-                             UserRepository userRepository,
-                             InviteRepository inviteRepository) {
+            UserRepository userRepository,
+            InviteRepository inviteRepository) {
         this.watchPartyRepository = watchPartyRepository;
         this.userRepository = userRepository;
         this.inviteRepository = inviteRepository;
@@ -71,35 +73,35 @@ public class WatchPartyService {
 
 
 // Invite a user to a watch party
-public String inviteUserToWatchParty(Long watchPartyId, String username, Long inviterId) {
-    System.out.println("Attempting to find user by username: " + username);
+    public String inviteUserToWatchParty(Long watchPartyId, String username, Long inviterId) {
+        System.out.println("Attempting to find user by username: " + username);
 
-    // Fetch user from the repository
-    User userToInvite = userRepository.findByUsername(username);
+        // Fetch user from the repository
+        User userToInvite = userRepository.findByUsername(username);
 
-    if (userToInvite == null) { // Adjusted to handle null return
-        System.out.println("User not found in database: " + username);
-        return "Username does not exist"; // User not found
+        if (userToInvite == null) { // Adjusted to handle null return
+            System.out.println("User not found in database: " + username);
+            return "Username does not exist"; // User not found
+        }
+
+        System.out.println("User found: " + userToInvite.getUsername() + ", Email: " + userToInvite.getEmail());
+
+        // Create a new invite object
+        Invite invite = new Invite();
+        invite.setWatchPartyId(watchPartyId);
+        invite.setUsername(username);
+        invite.setStatus("pending");
+
+        // Save invite to the repository
+        inviteRepository.save(invite);
+        System.out.println("Invite created and saved for user: " + username);
+
+        // Send email invite using the user's email
+        sendInviteEmail(userToInvite.getEmail(), watchPartyId, username);
+        System.out.println("Invite email sent to: " + userToInvite.getEmail());
+
+        return "Invite sent successfully!";
     }
-
-    System.out.println("User found: " + userToInvite.getUsername() + ", Email: " + userToInvite.getEmail());
-
-    // Create a new invite object
-    Invite invite = new Invite();
-    invite.setWatchPartyId(watchPartyId);
-    invite.setUsername(username);
-    invite.setStatus("pending");
-
-    // Save invite to the repository
-    inviteRepository.save(invite);
-    System.out.println("Invite created and saved for user: " + username);
-
-    // Send email invite using the user's email
-    sendInviteEmail(userToInvite.getEmail(), watchPartyId, username);
-    System.out.println("Invite email sent to: " + userToInvite.getEmail());
-
-    return "Invite sent successfully!";
-}
 
 
     //  Send email invite via SMTP
@@ -114,7 +116,7 @@ public String inviteUserToWatchParty(Long watchPartyId, String username, Long in
                              "❌ Decline: " + declineLink;
 
         Properties props = new Properties();
-        props.put("mail.smtp.host", "smtp.gmail.com"); 
+        props.put("mail.smtp.host", "smtp.gmail.com");
         props.put("mail.smtp.port", "587");
         props.put("mail.smtp.auth", "true");
         props.put("mail.smtp.starttls.enable", "true");
@@ -167,5 +169,11 @@ public String inviteUserToWatchParty(Long watchPartyId, String username, Long in
                 .stream()
                 .map(invite -> invite.getUsername() + " - " + invite.getStatus())
                 .toList();
+    }
+
+    public WatchParty getWatchPartyById(Long id) {
+        return watchPartyRepository.findById(id)
+                .orElseThrow(()
+                        -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Watch-party not found."));
     }
 }

@@ -71,14 +71,14 @@ public class WatchPartyController {
             @PathVariable Long watchPartyId,
             @RequestParam String username,
             @RequestParam Long inviterId) {
-    
+
         String responseMessage = watchPartyService.inviteUserToWatchParty(watchPartyId, username, inviterId);
-    
+
         Map<String, String> response = Map.of("message", responseMessage);
         return responseMessage.equals("Username does not exist")
                 ? ResponseEntity.status(HttpStatus.NOT_FOUND).body(response)
                 : ResponseEntity.ok(response);
-    }    
+    }
 
     // Fetch the list of invited users for a specific watch party
     @GetMapping("/{watchPartyId}/invites")
@@ -105,5 +105,10 @@ public class WatchPartyController {
     public ResponseEntity<List<String>> getLatestInviteResponses(@PathVariable Long watchPartyId) {
         List<String> latestResponses = watchPartyService.getLatestInviteResponses(watchPartyId);
         return new ResponseEntity<>(latestResponses, HttpStatus.OK);
+    }
+
+    @GetMapping("/{watchPartyId}")
+    public WatchParty getWatchParty(@PathVariable Long watchPartyId) {
+        return watchPartyService.getWatchPartyById(watchPartyId);
     }
 }
