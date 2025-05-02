@@ -15,6 +15,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 
 import ch.uzh.ifi.hase.soprafs24.entity.User;
 import ch.uzh.ifi.hase.soprafs24.entity.WatchParty;
@@ -167,5 +169,25 @@ class WatchPartyControllerRestTest {
         mvc.perform(get("/api/watchparties/6/latest-invite-status"))
            .andExpect(status().isOk())
            .andExpect(jsonPath("$[0]").value("x - OK"));
+    }
+
+    @Test
+    void getWatchPartyById_ok() throws Exception {
+        WatchParty wp = new WatchParty();
+        wp.setId(10L);
+        wp.setContentLink("http://link");
+        when(watchPartyService.getWatchPartyById(10L)).thenReturn(wp);
+        mvc.perform(get("/api/watchparties/10"))
+           .andExpect(status().isOk())
+           .andExpect(jsonPath("$.id").value(10))
+           .andExpect(jsonPath("$.contentLink").value("http://link"));
+    }
+
+    @Test
+    void getWatchPartyById_notFound() throws Exception {
+        when(watchPartyService.getWatchPartyById(11L))
+            .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "not found"));
+        mvc.perform(get("/api/watchparties/11"))
+           .andExpect(status().isNotFound());
     }
 }

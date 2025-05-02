@@ -5,6 +5,7 @@ import static org.mockito.Mockito.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -59,5 +60,20 @@ class WatchPartyServiceUnitTest {
         assertEquals(List.of("x"), users);
         List<String> latest = service.getLatestInviteResponses(2L);
         assertEquals(List.of("x - OK"), latest);
+    }
+
+    @Test
+    void getWatchPartyById_found() {
+        WatchParty wp = new WatchParty();
+        wp.setId(5L);
+        when(wpRepo.findById(5L)).thenReturn(Optional.of(wp));
+        WatchParty result = service.getWatchPartyById(5L);
+        assertEquals(5L, result.getId());
+    }
+
+    @Test
+    void getWatchPartyById_notFound_throws404() {
+        when(wpRepo.findById(7L)).thenReturn(Optional.empty());
+        assertThrows(ResponseStatusException.class, () -> service.getWatchPartyById(7L));
     }
 }
