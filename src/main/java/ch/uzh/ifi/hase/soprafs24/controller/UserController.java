@@ -344,4 +344,14 @@ public class UserController {
         User updated = userService.getUserById(userId);
         return DTOMapper.INSTANCE.convertEntityToUserGetDTO(updated);
     }
+
+    @DeleteMapping("/{userId}/friends/{friendId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void removeFriend(
+        @PathVariable Long userId,
+        @PathVariable Long friendId
+    ) {
+        userService.removeFriend(userId, friendId);
+    }
+
 }
