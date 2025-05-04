@@ -8,8 +8,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;                                               
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -64,4 +66,15 @@ public class ChatController {
 
         return fullHistory;
     }
+
+    @DeleteMapping("/chat/conversation/{userA}/{userB}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteConversation(
+        @PathVariable Long userA,
+        @PathVariable Long userB
+    ) {
+        chatMessageRepository.deleteBySenderIdAndReceiverId(userA, userB);
+        chatMessageRepository.deleteBySenderIdAndReceiverId(userB, userA);
+    }
+
 }

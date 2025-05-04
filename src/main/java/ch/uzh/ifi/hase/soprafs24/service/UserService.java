@@ -330,4 +330,18 @@ public class UserService {
         }
         return user;
     }
+
+    public void removeFriend(Long userId, Long friendId) {
+        User user  = getUserById(userId);
+        User other = getUserById(friendId);
+    
+        if (user != null && other != null) {
+            user.getFriends().remove(friendId);
+            other.getFriends().remove(userId);
+    
+            userRepository.save(user);
+            userRepository.save(other);
+        }
+    }
+    
 }
