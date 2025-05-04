@@ -153,7 +153,7 @@ public class UserService {
     public void updateUser(Long userId, User userData) {
         User existingUser = userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-
+    
         if (userData.getUsername() != null && !userData.getUsername().isEmpty()) {
             User userByUsername = userRepository.findByUsername(userData.getUsername());
             if (userByUsername != null && !userByUsername.getId().equals(userId)) {
@@ -161,15 +161,15 @@ public class UserService {
             }
             existingUser.setUsername(userData.getUsername());
         }
-
+    
         if (userData.getPassword() != null) {
             existingUser.setPassword(passwordEncoder.encode(userData.getPassword()));
         }
-
+    
         if (userData.getBirthday() != null) {
             existingUser.setBirthday(userData.getBirthday());
         }
-
+    
         if (userData.getEmail() != null) {
             User userByEmail = userRepository.findByEmail(userData.getEmail());
             if (userByEmail != null && !userByEmail.getId().equals(userId)) {
@@ -177,25 +177,29 @@ public class UserService {
             }
             existingUser.setEmail(userData.getEmail());
         }
-
+    
         if (userData.getBiography() != null) {
             existingUser.setBiography(userData.getBiography());
         }
-
+    
         if (userData.getProfilePictureUrl() != null) {
             existingUser.setProfilePictureUrl(userData.getProfilePictureUrl());
         }
-
+    
         if (userData.isSharable() != existingUser.isSharable()) {
             existingUser.setSharable(userData.isSharable());
         }
-
+    
         if (userData.isPublicRatings() != existingUser.isPublicRatings()) {
             existingUser.setPublicRatings(userData.isPublicRatings());
         }
-
+    
+        if (userData.getAvatarKey() != null) {
+            existingUser.setAvatarKey(userData.getAvatarKey());
+        }
+    
         userRepository.save(existingUser);
-    }
+    }    
 
     public void addMovieToWatchlist(Long userId, String jsonString) {
         User user = getUserById(userId);

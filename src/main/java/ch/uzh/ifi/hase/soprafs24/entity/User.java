@@ -6,9 +6,9 @@ import javax.persistence.*;
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.HashSet;
 
 @Entity
 @Table(name = "USER")
@@ -52,6 +52,9 @@ public class User implements Serializable {
 
     @Column
     private String profilePictureUrl;
+
+    @Column
+    private String avatarKey;
 
     @ElementCollection(fetch = FetchType.EAGER)
     private List<String> watchlist = new ArrayList<>();
@@ -133,14 +136,6 @@ public class User implements Serializable {
         this.birthday = birthday;
     }
 
-    public List<String> getWatchlist() {
-        return watchlist;
-    }
-
-    public void setWatchlist(List<String> watchlist) {
-        this.watchlist = watchlist;
-    }
-
     public String getEmail() {
         return email;
     }
@@ -179,6 +174,22 @@ public class User implements Serializable {
 
     public void setProfilePictureUrl(String profilePictureUrl) {
         this.profilePictureUrl = profilePictureUrl;
+    }
+
+    public String getAvatarKey() {
+        return avatarKey;
+    }
+
+    public void setAvatarKey(String avatarKey) {
+        this.avatarKey = avatarKey;
+    }
+
+    public List<String> getWatchlist() {
+        return watchlist;
+    }
+
+    public void setWatchlist(List<String> watchlist) {
+        this.watchlist = watchlist;
     }
 
     public Set<Long> getIncomingFriendRequests() {

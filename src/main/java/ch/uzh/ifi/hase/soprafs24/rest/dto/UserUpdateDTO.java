@@ -5,12 +5,12 @@ public class UserUpdateDTO {
     private String username;
     private String password;
     private String birthday;
-
     private String email;
     private String biography;
     private Boolean sharable;
     private Boolean publicRatings;
     private String profilePictureUrl;
+    private String avatarKey;
 
     public String getUsername() {
         return username;
@@ -74,5 +74,13 @@ public class UserUpdateDTO {
 
     public void setProfilePictureUrl(String profilePictureUrl) {
         this.profilePictureUrl = profilePictureUrl;
+    }
+
+    public String getAvatarKey() {
+        return avatarKey;
+    }
+
+    public void setAvatarKey(String avatarKey) {
+        this.avatarKey = avatarKey;
     }
 }

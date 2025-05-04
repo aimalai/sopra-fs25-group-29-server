@@ -12,12 +12,12 @@ public class UserGetDTO {
     private LocalDate creationDate;
     private String birthday;
     private String token;
-
     private String email;
     private String biography;
     private boolean sharable;
     private boolean publicRatings;
     private String profilePictureUrl;
+    private String avatarKey;
 
     public Long getId() {
         return id;
@@ -113,5 +113,13 @@ public class UserGetDTO {
 
     public void setProfilePictureUrl(String profilePictureUrl) {
         this.profilePictureUrl = profilePictureUrl;
+    }
+
+    public String getAvatarKey() {
+        return avatarKey;
+    }
+
+    public void setAvatarKey(String avatarKey) {
+        this.avatarKey = avatarKey;
     }
 }

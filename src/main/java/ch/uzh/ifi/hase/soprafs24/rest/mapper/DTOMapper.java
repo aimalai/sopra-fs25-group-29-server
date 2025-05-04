@@ -32,7 +32,8 @@ public interface DTOMapper {
         @Mapping(source = "biography", target = "biography"),
         @Mapping(source = "sharable", target = "sharable"),
         @Mapping(source = "publicRatings", target = "publicRatings"),
-        @Mapping(source = "profilePictureUrl", target = "profilePictureUrl")
+        @Mapping(source = "profilePictureUrl", target = "profilePictureUrl"),
+        @Mapping(source = "avatarKey", target = "avatarKey")
     })
     UserGetDTO convertEntityToUserGetDTO(User user);
 
@@ -44,7 +45,8 @@ public interface DTOMapper {
         @Mapping(source = "biography", target = "biography"),
         @Mapping(source = "sharable", target = "sharable"),
         @Mapping(source = "publicRatings", target = "publicRatings"),
-        @Mapping(source = "profilePictureUrl", target = "profilePictureUrl")
+        @Mapping(source = "profilePictureUrl", target = "profilePictureUrl"),
+        @Mapping(source = "avatarKey", target = "avatarKey")
     })
     User convertUserUpdateDTOtoEntity(UserUpdateDTO userUpdateDTO);
 }
