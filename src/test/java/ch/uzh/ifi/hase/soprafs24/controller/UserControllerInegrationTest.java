@@ -21,6 +21,8 @@ import java.util.HashMap;
 
 import static org.hamcrest.Matchers.is;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -111,5 +113,29 @@ public class UserControllerInegrationTest {
                 .content(asJsonString(requestBody)))
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.error", is("An unexpected error occurred during OTP verification.")));
+    }
+
+    @Test
+    public void removeFriend_shouldReturnNoContent() throws Exception {
+        Mockito.doNothing().when(userService).removeFriend(1L, 2L);
+        mockMvc.perform(delete("/users/1/friends/2"))
+            .andExpect(status().isNoContent());
+    }
+
+    @Test
+    public void declineFriendRequest_validRequest_returnsNoContent() throws Exception {
+        doNothing().when(userService).declineFriendRequest(1L, 2L);
+
+        mockMvc.perform(delete("/users/1/friendrequests/2"))
+            .andExpect(status().isNoContent());
+    }
+
+    @Test
+    public void declineFriendRequest_noExistingRequest_returnsBadRequest() throws Exception {
+        doThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST))
+        .when(userService).declineFriendRequest(1L, 2L);
+
+        mockMvc.perform(delete("/users/1/friendrequests/2"))
+            .andExpect(status().isBadRequest());
     }
 }

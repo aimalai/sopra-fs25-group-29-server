@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 import ch.uzh.ifi.hase.soprafs24.entity.User;
@@ -51,4 +52,45 @@ class UserServiceUnitTest {
         );
         assertEquals(404, ex.getStatus().value());
     }
+
+    @Test
+    void removeFriend_removesFriendshipFromBothSides() {
+        User alice = new User();
+        alice.setId(1L);
+        alice.getFriends().add(2L);
+        User bob = new User();
+        bob.setId(2L);
+        bob.getFriends().add(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(alice));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(bob));
+        userService.removeFriend(1L, 2L);
+        assertFalse(alice.getFriends().contains(2L));
+        assertFalse(bob.getFriends().contains(1L));
+        verify(userRepository).save(alice);
+        verify(userRepository).save(bob);
+    }
+
+    @Test
+    void declineFriendRequest_removesFromIncomingRequests() {
+        user.getIncomingFriendRequests().add(2L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        userService.declineFriendRequest(1L, 2L);
+
+        assertFalse(user.getIncomingFriendRequests().contains(2L));
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void declineFriendRequest_noRequest_throwsBadRequest() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        ResponseStatusException ex = assertThrows(
+            ResponseStatusException.class,
+            () -> userService.declineFriendRequest(1L, 2L)
+        );
+
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+    }
+
 }

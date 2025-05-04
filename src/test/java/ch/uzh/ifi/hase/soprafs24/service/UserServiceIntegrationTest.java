@@ -1,9 +1,13 @@
 package ch.uzh.ifi.hase.soprafs24.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.util.List;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -145,5 +149,52 @@ public class UserServiceIntegrationTest {
         userService.logoutUser(created.getId());
         User reloaded = userService.getUserById(created.getId());
         assertEquals(UserStatus.OFFLINE, reloaded.getStatus());
+    }
+
+    @Test
+    public void removeFriend_shouldRemoveFriendship() {
+        User u1 = new User();
+        u1.setUsername("u1");
+        u1.setEmail("u1@x");
+        u1.setPassword("p");
+        User saved1 = userService.createUser(u1);
+        User u2 = new User();
+        u2.setUsername("u2");
+        u2.setEmail("u2@x");
+        u2.setPassword("p");
+        User saved2 = userService.createUser(u2);
+        saved1.getFriends().add(saved2.getId());
+        saved2.getFriends().add(saved1.getId());
+        userRepository.save(saved1);
+        userRepository.save(saved2);
+        userService.removeFriend(saved1.getId(), saved2.getId());
+        User reloaded1 = userRepository.findById(saved1.getId()).get();
+        User reloaded2 = userRepository.findById(saved2.getId()).get();
+        assertEquals(false, reloaded1.getFriends().contains(saved2.getId()));
+        assertEquals(false, reloaded2.getFriends().contains(saved1.getId()));
+    }
+
+    @Test
+    public void declineFriendRequest_removesRequest() {
+        User target = new User();
+        target.setUsername("target"); target.setEmail("t@e"); target.setPassword("p");
+        User from   = new User();
+        from.setUsername("from");   from.setEmail("f@e"); from.setPassword("p");
+
+        User savedTarget = userService.createUser(target);
+        User savedFrom   = userService.createUser(from);
+
+        userService.sendFriendRequest(savedTarget.getId(), savedFrom.getId());
+        userService.declineFriendRequest(savedTarget.getId(), savedFrom.getId());
+
+        List<Long> requests = userService.getFriendRequests(savedTarget.getId());
+        assertFalse(requests.contains(savedFrom.getId()));
+    }
+
+    @Test
+    public void declineFriendRequest_whenNoRequest_throwsException() {
+        assertThrows(ResponseStatusException.class, () ->
+            userService.declineFriendRequest(999L, 888L)
+        );
     }
 }
