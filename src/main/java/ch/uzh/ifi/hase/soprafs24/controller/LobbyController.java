@@ -32,8 +32,8 @@ public class LobbyController {
         if (parts.length >= 3) {
             String roomId = parts[2];
             messagingTemplate.convertAndSend(
-                "/topic/errors/" + roomId,
-                ex.getMessage()
+                    "/topic/errors/" + roomId,
+                    ex.getMessage()
             );
         }
     }
@@ -110,8 +110,8 @@ public class LobbyController {
         sessionUsernames.put(sessionId, user);
         roomHosts.computeIfAbsent(roomId, rid -> sessionId);
         roomStates
-            .computeIfAbsent(roomId, rid -> new ConcurrentHashMap<>())
-            .put(sessionId, false);
+                .computeIfAbsent(roomId, rid -> new ConcurrentHashMap<>())
+                .put(sessionId, false);
 
         broadcastLobbyState(roomId);
     }
@@ -143,10 +143,10 @@ public class LobbyController {
         }
 
         List<ParticipantMessage> participants = states.entrySet().stream()
-            .map(e -> new ParticipantMessage(
+                .map(e -> new ParticipantMessage(
                 sessionUsernames.getOrDefault(e.getKey(), "Unknown"),
                 e.getValue()))
-            .collect(Collectors.toList());
+                .collect(Collectors.toList());
 
         String hostSession = roomHosts.get(roomId);
         String hostUser = sessionUsernames.getOrDefault(hostSession, "Unknown");
@@ -156,16 +156,16 @@ public class LobbyController {
         state.setHostUsername(hostUser);
 
         messagingTemplate.convertAndSend(
-            "/topic/syncReadyState/" + roomId,
-            state
+                "/topic/syncReadyState/" + roomId,
+                state
         );
     }
 
     @MessageMapping("/shareTime")
     public void handleShareTime(@Payload TimeMessage msg) {
         messagingTemplate.convertAndSend(
-            "/topic/syncTime/" + msg.getRoomId(),
-            msg
+                "/topic/syncTime/" + msg.getRoomId(),
+                msg
         );
     }
 
@@ -173,8 +173,8 @@ public class LobbyController {
     public void handleLobbyChat(@Payload LobbyChatMessage msg) {
         msg.setTimestamp(java.time.LocalDateTime.now());
         messagingTemplate.convertAndSend(
-            "/topic/chat/" + msg.getRoomId(),
-            msg
+                "/topic/chat/" + msg.getRoomId(),
+                msg
         );
     }
 
@@ -184,6 +184,26 @@ public class LobbyController {
                 broadcastLobbyState(roomId);
             }
         });
+    }
+
+    @MessageMapping("/leave")
+    public void handleLeave(@Payload PartyMessage msg, SimpMessageHeaderAccessor header) {
+        String sessionId = header.getSessionId();
+        removeSession(sessionId);
+
+        roomHosts.computeIfPresent(msg.getRoomId(), (rid, hostSession) -> {
+            if (hostSession.equals(sessionId)) {
+                Map<String, Boolean> states = roomStates.get(rid);
+                if (states != null && !states.isEmpty()) {
+                    return states.keySet().iterator().next();
+                }
+                roomStates.remove(rid);
+                return null;
+            }
+            return hostSession;
+        });
+
+        broadcastLobbyState(msg.getRoomId());
     }
 
     public static class LobbyChatMessage {
