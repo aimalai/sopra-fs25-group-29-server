@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
@@ -21,6 +22,19 @@ public class LobbyController {
 
     public LobbyController(SimpMessagingTemplate messagingTemplate) {
         this.messagingTemplate = messagingTemplate;
+    }
+
+    @MessageExceptionHandler(Exception.class)
+    public void handleStompError(Exception ex, Message<?> message) {
+        String destination = (String) message.getHeaders().get("simpDestination");
+        String[] parts = destination.split("/");
+        if (parts.length >= 3) {
+            String roomId = parts[2];
+            messagingTemplate.convertAndSend(
+                "/topic/errors/" + roomId,
+                ex.getMessage()
+            );
+        }
     }
 
     public static class ParticipantMessage {
@@ -95,8 +109,8 @@ public class LobbyController {
         sessionUsernames.put(sessionId, user);
         roomHosts.computeIfAbsent(roomId, rid -> sessionId);
         roomStates
-                .computeIfAbsent(roomId, rid -> new ConcurrentHashMap<>())
-                .put(sessionId, false);
+            .computeIfAbsent(roomId, rid -> new ConcurrentHashMap<>())
+            .put(sessionId, false);
 
         broadcastLobbyState(roomId);
     }
@@ -128,10 +142,10 @@ public class LobbyController {
         }
 
         List<ParticipantMessage> participants = states.entrySet().stream()
-                .map(e -> new ParticipantMessage(
+            .map(e -> new ParticipantMessage(
                 sessionUsernames.getOrDefault(e.getKey(), "Unknown"),
                 e.getValue()))
-                .collect(Collectors.toList());
+            .collect(Collectors.toList());
 
         String hostSession = roomHosts.get(roomId);
         String hostUser = sessionUsernames.getOrDefault(hostSession, "Unknown");
@@ -141,16 +155,25 @@ public class LobbyController {
         state.setHostUsername(hostUser);
 
         messagingTemplate.convertAndSend(
-                "/topic/syncReadyState/" + roomId,
-                state
+            "/topic/syncReadyState/" + roomId,
+            state
         );
     }
 
     @MessageMapping("/shareTime")
     public void handleShareTime(@Payload TimeMessage msg) {
         messagingTemplate.convertAndSend(
-                "/topic/syncTime/" + msg.getRoomId(),
-                msg
+            "/topic/syncTime/" + msg.getRoomId(),
+            msg
+        );
+    }
+
+    @MessageMapping("/chat.sendLobbyMessage")
+    public void handleLobbyChat(@Payload LobbyChatMessage msg) {
+        msg.setTimestamp(java.time.LocalDateTime.now());
+        messagingTemplate.convertAndSend(
+            "/topic/chat/" + msg.getRoomId(),
+            msg
         );
     }
 
@@ -160,15 +183,6 @@ public class LobbyController {
                 broadcastLobbyState(roomId);
             }
         });
-    }
-
-    @MessageMapping("/chat.sendLobbyMessage")
-    public void handleLobbyChat(@Payload LobbyChatMessage msg) {
-        msg.setTimestamp(java.time.LocalDateTime.now());
-        messagingTemplate.convertAndSend(
-                "/topic/chat/" + msg.getRoomId(),
-                msg
-        );
     }
 
     public static class LobbyChatMessage {
