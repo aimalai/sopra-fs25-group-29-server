@@ -44,8 +44,8 @@ public class User implements Serializable {
     @Column(length = 1000)
     private String biography;
 
-    @Column
-    private boolean sharable;
+    @Column(nullable = false)
+    private boolean sharable = true;
 
     @Column
     private boolean publicRatings;
