@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 
@@ -176,4 +177,13 @@ public class WatchPartyService {
                 .orElseThrow(()
                         -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Watch-party not found."));
     }
+
+    public List<WatchParty> getWatchPartiesForInvitee(String username) {
+    return inviteRepository.findByUsernameAndStatus(username, "accepted")
+        .stream()
+        .map(inv -> watchPartyRepository.findById(inv.getWatchPartyId())
+            .orElse(null))
+        .filter(Objects::nonNull)
+        .toList();
+}
 }

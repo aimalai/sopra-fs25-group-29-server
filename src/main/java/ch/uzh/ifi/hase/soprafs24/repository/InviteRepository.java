@@ -22,4 +22,6 @@ public interface InviteRepository extends JpaRepository<Invite, Long> {
      * @return List of invites ordered by latest updates.
      */
     List<Invite> findByWatchPartyIdOrderByUpdatedAtDesc(Long watchPartyId); // using updatedAt for polling accuracy
+
+    List<Invite> findByUsernameAndStatus(String username, String status);
 }

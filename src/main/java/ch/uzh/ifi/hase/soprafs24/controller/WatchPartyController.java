@@ -55,16 +55,6 @@ public class WatchPartyController {
         }
     }
 
-    // Get watch parties (all or by organizer ID)
-    @GetMapping("")
-    public List<WatchParty> getWatchParties(@RequestParam(required = false) Long organizerId) {
-        if (organizerId != null) {
-            return watchPartyService.getWatchPartiesByOrganizer(organizerId);
-        } else {
-            return watchPartyService.getAllWatchParties();
-        }
-    }
-
     // Invite a user to a watch party
     @PostMapping("/{watchPartyId}/invites")
     public ResponseEntity<Map<String, String>> inviteUser(
@@ -110,5 +100,19 @@ public class WatchPartyController {
     @GetMapping("/{watchPartyId}")
     public WatchParty getWatchParty(@PathVariable Long watchPartyId) {
         return watchPartyService.getWatchPartyById(watchPartyId);
+    }
+
+    @GetMapping("")
+    public List<WatchParty> getWatchParties(
+        @RequestParam(required = false) Long organizerId,
+        @RequestParam(required = false) String username) {
+
+    if (organizerId != null) {
+        return watchPartyService.getWatchPartiesByOrganizer(organizerId);
+    }
+    if (username != null) {
+        return watchPartyService.getWatchPartiesForInvitee(username);
+    }
+    return watchPartyService.getAllWatchParties();
     }
 }
