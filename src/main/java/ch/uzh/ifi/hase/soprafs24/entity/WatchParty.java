@@ -1,7 +1,16 @@
 package ch.uzh.ifi.hase.soprafs24.entity;
 
-import javax.persistence.*;
 import java.time.LocalDateTime;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+import javax.validation.constraints.Size;
 
 @Entity
 @Table(name = "watch_party")
@@ -15,7 +24,8 @@ public class WatchParty {
     @JoinColumn(name = "organizer_id")
     private User organizer;
 
-    @Column(nullable = false)
+    @Size(max = 512, message = "Link can at most have 512 characters.")
+    @Column(nullable = false, length = 512)
     private String contentLink;
 
     @Column(nullable = false)
