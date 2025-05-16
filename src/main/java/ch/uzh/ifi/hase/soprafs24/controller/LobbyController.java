@@ -21,6 +21,18 @@ public class LobbyController {
     private final Map<String, String> sessionUsernames = new ConcurrentHashMap<>();
     private final Map<String, String> roomHosts = new ConcurrentHashMap<>();
 
+    public Map<String, String> getSessionUsernames() {
+    return sessionUsernames;
+    }
+
+    public Map<String, Map<String, Boolean>> getRoomStates() {
+    return roomStates;
+    }
+
+    public Map<String, String> getRoomHosts() {
+    return roomHosts;
+    }
+    
     public LobbyController(SimpMessagingTemplate messagingTemplate) {
         this.messagingTemplate = messagingTemplate;
     }
