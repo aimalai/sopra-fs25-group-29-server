@@ -175,15 +175,17 @@ public class UserController {
             @RequestBody Map<String, String> payload
     ) {
         String movieId = payload.get("movieId");
+        String mediaType = payload.getOrDefault("mediaType", "movie");
         if (movieId == null || movieId.trim().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "movieId is required");
         }
         String addedOn = LocalDateTime.now().toString();
         String json = String.format(
-                "{\"movieId\":\"%s\",\"title\":\"%s\",\"posterPath\":\"%s\",\"addedOn\":\"%s\"}",
+                "{\"movieId\":\"%s\",\"title\":\"%s\",\"posterPath\":\"%s\",\"mediaType\":\"%s\",\"addedOn\":\"%s\"}",
                 movieId,
                 payload.getOrDefault("title", ""),
                 payload.getOrDefault("posterPath", ""),
+                mediaType,
                 addedOn
         );
         userService.addMovieToWatchlist(userId, json);
@@ -349,8 +351,8 @@ public class UserController {
     @DeleteMapping("/{userId}/friends/{friendId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void removeFriend(
-            @PathVariable Long userId,
-            @PathVariable Long friendId
+        @PathVariable Long userId,
+        @PathVariable Long friendId
     ) {
         userService.removeFriend(userId, friendId);
     }
