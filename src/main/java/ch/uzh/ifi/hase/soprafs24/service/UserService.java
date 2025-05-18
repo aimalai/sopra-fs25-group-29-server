@@ -49,31 +49,25 @@ public class UserService {
     }
 
     public User createUser(User newUser) {
-        // Generate token and set initial status
         newUser.setToken(UUID.randomUUID().toString());
         newUser.setStatus(UserStatus.ONLINE);
 
-        // Validate email presence
         if (newUser.getEmail() == null || newUser.getEmail().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email is required.");
         }
 
-        // Check for duplicate username
         checkIfUserExists(newUser);
 
-        // Check for duplicate email explicitly
         User userByEmail = userRepository.findByEmail(newUser.getEmail());
         if (userByEmail != null) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use.");
         }
 
-        // Set creation date and save user to repository
         newUser.setCreationDate(LocalDate.now());
         newUser.setPassword(passwordEncoder.encode(newUser.getPassword()));
         newUser = userRepository.save(newUser);
         userRepository.flush();
 
-        // Send welcome email
         try {
             String emailContent = "<html><head><meta charset='UTF-8'></head><body>"
                                 + "<div style='font-family: Arial, 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif; color: #000000; text-align: center;'>"
@@ -98,7 +92,6 @@ public class UserService {
             log.error("Failed to send welcome email to {}: {}", newUser.getEmail(), e.getMessage());
         }
         
-        // Log user creation details
         log.debug("Created Information for User: {}", newUser);
         return newUser;
     }
@@ -333,7 +326,7 @@ public class UserService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid token");
         }
         return user;
-    }
+        }
 
     public void removeFriend(Long userId, Long friendId) {
         User user  = getUserById(userId);
@@ -348,4 +341,12 @@ public class UserService {
         }
     }
     
+    public void updateUserToken(Long userId, String token) {
+  User user = getUserById(userId);
+  if (user == null) {
+    throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+  }
+  user.setToken(token);
+  userRepository.save(user);
+}
 }

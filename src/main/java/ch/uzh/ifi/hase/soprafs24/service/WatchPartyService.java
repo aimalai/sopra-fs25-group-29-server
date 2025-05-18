@@ -44,7 +44,6 @@ public class WatchPartyService {
         this.inviteRepository = inviteRepository;
     }
 
-    // Create a new watch party
     public WatchParty createWatchParty(User organizer, String title, String contentLink, String description, LocalDateTime scheduledTime) {
         ZonedDateTime scheduledTimeUTC = scheduledTime.atZone(ZoneId.of("UTC"));
         ZonedDateTime scheduledTimeLocal = scheduledTimeUTC.withZoneSameInstant(ZoneId.systemDefault());
@@ -62,50 +61,40 @@ public class WatchPartyService {
         return watchPartyRepository.save(watchParty);
     }
 
-    // Get watch parties by organizer ID
     public List<WatchParty> getWatchPartiesByOrganizer(Long organizerId) {
         return watchPartyRepository.findByOrganizer_Id(organizerId);
     }
 
-    // Get all watch parties
     public List<WatchParty> getAllWatchParties() {
         return watchPartyRepository.findAll();
     }
 
-
-// Invite a user to a watch party
     public String inviteUserToWatchParty(Long watchPartyId, String username, Long inviterId) {
         System.out.println("Attempting to find user by username: " + username);
 
-        // Fetch user from the repository
         User userToInvite = userRepository.findByUsername(username);
 
-        if (userToInvite == null) { // Adjusted to handle null return
+        if (userToInvite == null) { 
             System.out.println("User not found in database: " + username);
-            return "Username does not exist"; // User not found
+            return "Username does not exist"; 
         }
 
         System.out.println("User found: " + userToInvite.getUsername() + ", Email: " + userToInvite.getEmail());
 
-        // Create a new invite object
         Invite invite = new Invite();
         invite.setWatchPartyId(watchPartyId);
         invite.setUsername(username);
         invite.setStatus("pending");
 
-        // Save invite to the repository
         inviteRepository.save(invite);
         System.out.println("Invite created and saved for user: " + username);
 
-        // Send email invite using the user's email
         sendInviteEmail(userToInvite.getEmail(), watchPartyId, username);
         System.out.println("Invite email sent to: " + userToInvite.getEmail());
 
         return "Invite sent successfully!";
     }
 
-
-    //  Send email invite via SMTP
     private void sendInviteEmail(String email, Long watchPartyId, String username) {
         String acceptLink = baseUrl + "/api/watchparties/" + watchPartyId + "/invite-response?username=" + username + "&status=accepted";
         String declineLink = baseUrl + "/api/watchparties/" + watchPartyId + "/invite-response?username=" + username + "&status=declined";
@@ -142,7 +131,6 @@ public class WatchPartyService {
         }
     }
 
-    // Fetch list of invited users
     public List<String> getInvitedUsers(Long watchPartyId) {
         return inviteRepository.findByWatchPartyId(watchPartyId)
                 .stream()
@@ -150,7 +138,6 @@ public class WatchPartyService {
                 .toList();
     }
 
-    // Update invite response status
     public boolean updateInviteStatus(Long watchPartyId, String username, String status) {
         List<Invite> invites = inviteRepository.findByWatchPartyIdAndUsername(watchPartyId, username);
 
@@ -164,7 +151,6 @@ public class WatchPartyService {
         return false;
     }
 
-    // Fetch latest invite responses
     public List<String> getLatestInviteResponses(Long watchPartyId) {
         return inviteRepository.findByWatchPartyId(watchPartyId)
                 .stream()
