@@ -12,6 +12,8 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.List;
@@ -93,19 +95,20 @@ public class WatchPartyController {
 
     @GetMapping("/{watchPartyId}/invite-response")
     public ResponseEntity<String> handleInviteResponse(
-            @PathVariable Long watchPartyId,
-            @RequestParam String status,
-            @RequestHeader("Authorization") String authHeader) {
-
-        String token = authHeader.replaceFirst("^Bearer\\s+", "");
-        User current = userService.getUserByToken(token);
-        String username = current.getUsername();
+            @PathVariable("watchPartyId") Long watchPartyId,
+            @RequestParam("username")    String username,
+            @RequestParam("status")      String status) {
 
         boolean updated = watchPartyService.updateInviteStatus(watchPartyId, username, status);
-        return updated
-                ? ResponseEntity.ok("Invite response recorded successfully!")
-                : ResponseEntity.status(HttpStatus.NOT_FOUND).body("Failed to update invite response.");
+        if (updated) {
+            return ResponseEntity.ok("Invite response recorded successfully!");
+        } else {
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body("Failed to update invite response.");
+        }
     }
+
 
     @GetMapping("/{watchPartyId}/latest-invite-status")
     public ResponseEntity<List<String>> getLatestInviteResponses(@PathVariable Long watchPartyId) {
