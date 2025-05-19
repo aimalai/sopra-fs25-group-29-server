@@ -10,9 +10,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.HttpStatus;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 
 import ch.uzh.ifi.hase.soprafs24.entity.User;
 import ch.uzh.ifi.hase.soprafs24.service.OTPService;
@@ -22,13 +23,16 @@ import ch.uzh.ifi.hase.soprafs24.service.UserService;
 class UserControllerRestTest {
 
     @Autowired
-    MockMvc mvc;
+    private MockMvc mvc;
 
     @MockBean
-    UserService userService;
+    private UserService userService;
 
     @MockBean
-    OTPService otpService;
+    private OTPService otpService;
+
+    @MockBean
+    private SimpMessagingTemplate messagingTemplate;
 
     @Test
     void getUserById_found() throws Exception {
@@ -56,8 +60,7 @@ class UserControllerRestTest {
         u.setUsername("alice");
         when(userService.getUsersByUsername("ali")).thenReturn(List.of(u));
 
-        mvc.perform(get("/users")
-                .param("username", "ali"))
+        mvc.perform(get("/users").param("username", "ali"))
            .andExpect(status().isOk())
            .andExpect(jsonPath("$[0].username").value("alice"));
     }

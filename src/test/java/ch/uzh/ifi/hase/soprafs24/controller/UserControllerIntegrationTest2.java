@@ -3,8 +3,8 @@ package ch.uzh.ifi.hase.soprafs24.controller;
 import ch.uzh.ifi.hase.soprafs24.constant.UserStatus;
 import ch.uzh.ifi.hase.soprafs24.entity.User;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.UserPostDTO;
-import ch.uzh.ifi.hase.soprafs24.service.UserService;
 import ch.uzh.ifi.hase.soprafs24.service.OTPService;
+import ch.uzh.ifi.hase.soprafs24.service.UserService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -14,6 +14,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -38,6 +39,9 @@ public class UserControllerIntegrationTest2 {
     @MockBean
     private OTPService otpService;
 
+    @MockBean
+    private SimpMessagingTemplate messagingTemplate;
+
     @Autowired
     private ObjectMapper objectMapper;
 
@@ -50,7 +54,6 @@ public class UserControllerIntegrationTest2 {
         }
     }
 
-    // Test: Valid User Creation
     @Test
     public void createUser_validInput_userCreated() throws Exception {
         User user = new User();
@@ -78,11 +81,10 @@ public class UserControllerIntegrationTest2 {
                 .andExpect(jsonPath("$.status", is(user.getStatus().toString())));
     }
 
-    // Test: Invalid Username for OTP Verification
     @Test
     public void verifyOTP_missingUsername_error() throws Exception {
         HashMap<String, String> requestBody = new HashMap<>();
-        requestBody.put("otp", "123456"); // No username provided
+        requestBody.put("otp", "123456"); 
 
         mockMvc.perform(post("/users/otp/verify")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -91,7 +93,6 @@ public class UserControllerIntegrationTest2 {
                 .andExpect(jsonPath("$.message").value("Username is required for OTP verification."));
     }
 
-    // Test: Retrieve Friends of a User
     @Test
     public void getFriends_validUser_returnsFriends() throws Exception {
         User friend = new User();
@@ -110,17 +111,15 @@ public class UserControllerIntegrationTest2 {
                 .andExpect(jsonPath("$[0].email", is(friend.getEmail())));
     }
 
-    // Test: Friend Request Missing Payload
     @Test
     public void sendFriendRequest_missingPayload_error() throws Exception {
         mockMvc.perform(post("/users/1/friendrequests")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{}")) // Empty payload
+                .content("{}")) 
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("fromUserId is required"));
     }
 
-    // Test: Invalid User Logout
     @Test
     public void logoutUser_invalidUser_throwsException() throws Exception {
         Mockito.doThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"))
