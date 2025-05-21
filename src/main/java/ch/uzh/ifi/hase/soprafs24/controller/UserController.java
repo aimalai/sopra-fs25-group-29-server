@@ -9,25 +9,23 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.bind.annotation.RequestHeader;
 
 import ch.uzh.ifi.hase.soprafs24.entity.User;
 import ch.uzh.ifi.hase.soprafs24.exceptions.CustomResponseException;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.FriendWatchlistDTO;
-import ch.uzh.ifi.hase.soprafs24.rest.dto.NotificationDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.UserGetDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.UserPostDTO;
 import ch.uzh.ifi.hase.soprafs24.rest.dto.UserUpdateDTO;
@@ -41,13 +39,11 @@ public class UserController {
 
     private final UserService userService;
     private final OTPService otpService;
-    private final SimpMessagingTemplate messagingTemplate;
     private final Map<String, FailedLoginData> loginFailures = new HashMap<>();
 
-    public UserController(UserService userService, OTPService otpService, SimpMessagingTemplate messagingTemplate) {
+    UserController(UserService userService, OTPService otpService) {
         this.userService = userService;
         this.otpService = otpService;
-        this.messagingTemplate = messagingTemplate;
     }
 
     @PostMapping("")
@@ -78,6 +74,7 @@ public class UserController {
     public ResponseEntity<Map<String, Object>> loginUser(@RequestBody UserPostDTO userPostDTO) {
         String username = userPostDTO.getUsername();
         String password = userPostDTO.getPassword();
+
         try {
             if (isUserLocked(username)) {
                 throw new CustomResponseException(
@@ -85,14 +82,19 @@ public class UserController {
                         HttpStatus.FORBIDDEN
                 );
             }
+
             User userInput = DTOMapper.INSTANCE.convertUserPostDTOtoEntity(userPostDTO);
             User loggedInUser = userService.loginUser(userInput.getUsername(), userInput.getPassword());
+
             resetFailedLogins(username);
             otpService.sendOTP(loggedInUser.getUsername());
+
             Map<String, Object> response = new HashMap<>();
             response.put("message", "OTP sent to your registered email.");
             response.put("userId", loggedInUser.getId());
+
             return ResponseEntity.ok(response);
+
         } catch (CustomResponseException e) {
             handleFailedLogin(username);
             throw e;
@@ -107,7 +109,9 @@ public class UserController {
 
     private void handleFailedLogin(String username) {
         User user = userService.findByUsername(username);
-        if (user == null) return;
+        if (user == null) {
+            return;
+        }
         FailedLoginData data = loginFailures.getOrDefault(username, new FailedLoginData(0, null));
         if (data.getLockoutUntil() != null && LocalDateTime.now().isBefore(data.getLockoutUntil())) {
             return;
@@ -134,19 +138,24 @@ public class UserController {
     static class FailedLoginData {
         private int attempts;
         private LocalDateTime lockoutUntil;
+
         public FailedLoginData(int attempts, LocalDateTime lockoutUntil) {
             this.attempts = attempts;
             this.lockoutUntil = lockoutUntil;
         }
+
         public int getAttempts() {
             return attempts;
         }
+
         public void setAttempts(int attempts) {
             this.attempts = attempts;
         }
+
         public LocalDateTime getLockoutUntil() {
             return lockoutUntil;
         }
+
         public void setLockoutUntil(LocalDateTime lockoutUntil) {
             this.lockoutUntil = lockoutUntil;
         }
@@ -175,17 +184,15 @@ public class UserController {
             @RequestBody Map<String, String> payload
     ) {
         String movieId = payload.get("movieId");
-        String mediaType = payload.getOrDefault("mediaType", "movie");
         if (movieId == null || movieId.trim().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "movieId is required");
         }
         String addedOn = LocalDateTime.now().toString();
         String json = String.format(
-                "{\"movieId\":\"%s\",\"title\":\"%s\",\"posterPath\":\"%s\",\"mediaType\":\"%s\",\"addedOn\":\"%s\"}",
+                "{\"movieId\":\"%s\",\"title\":\"%s\",\"posterPath\":\"%s\",\"addedOn\":\"%s\"}",
                 movieId,
                 payload.getOrDefault("title", ""),
                 payload.getOrDefault("posterPath", ""),
-                mediaType,
                 addedOn
         );
         userService.addMovieToWatchlist(userId, json);
@@ -230,17 +237,7 @@ public class UserController {
         if (fromUserIdStr == null || fromUserIdStr.trim().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "fromUserId is required");
         }
-        long fromUserId = Long.parseLong(fromUserIdStr);
-        userService.sendFriendRequest(userId, fromUserId);
-        NotificationDTO dto = new NotificationDTO(
-                "friendRequest",
-                "You have received a friend request. Click here to view it!",
-                "/users"
-        );
-        messagingTemplate.convertAndSend(
-                "/topic/notifications." + userId,
-                dto
-        );
+        userService.sendFriendRequest(userId, Long.parseLong(fromUserIdStr));
         return "{\"message\": \"Friend request sent\"}";
     }
 
@@ -320,11 +317,11 @@ public class UserController {
         }
         try {
             Map<String, String> response = otpService.verifyOTP(username, otp);
-            return ResponseEntity.ok(response);
+            return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Collections.singletonMap("error", e.getMessage()));
+            return new ResponseEntity<>(Collections.singletonMap("error", e.getMessage()), HttpStatus.UNAUTHORIZED);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.singletonMap("error", "An unexpected error occurred during OTP verification."));
+            return new ResponseEntity<>(Collections.singletonMap("error", "An unexpected error occurred during OTP verification."), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -356,4 +353,5 @@ public class UserController {
     ) {
         userService.removeFriend(userId, friendId);
     }
+
 }

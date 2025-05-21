@@ -4,6 +4,10 @@ import javax.persistence.*;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
+/**
+ * Internal Invite Representation
+ * This class defines how the invite is stored in the database.
+ */
 @Entity
 @Table(name = "invites")
 public class Invite implements Serializable {
@@ -21,14 +25,15 @@ public class Invite implements Serializable {
     private String username;
 
     @Column(nullable = false)
-    private String status = "pending"; 
+    private String status = "pending"; // Default status
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
     @Column(nullable = false)
-    private LocalDateTime updatedAt = LocalDateTime.now(); 
+    private LocalDateTime updatedAt = LocalDateTime.now(); // field for polling
 
+    // Getters and Setters
     public Long getId() {
         return id;
     }
@@ -59,7 +64,7 @@ public class Invite implements Serializable {
 
     public void setStatus(String status) {
         this.status = status;
-        this.updatedAt = LocalDateTime.now(); 
+        this.updatedAt = LocalDateTime.now(); // Ensure updated timestamp changes when status updates
     }
 
     public LocalDateTime getCreatedAt() {

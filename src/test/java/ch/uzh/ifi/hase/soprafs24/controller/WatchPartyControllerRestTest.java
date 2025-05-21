@@ -14,10 +14,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
-import org.springframework.http.HttpStatus;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 
 import ch.uzh.ifi.hase.soprafs24.entity.User;
 import ch.uzh.ifi.hase.soprafs24.entity.WatchParty;
@@ -27,21 +26,10 @@ import ch.uzh.ifi.hase.soprafs24.service.WatchPartyService;
 @WebMvcTest(WatchPartyController.class)
 class WatchPartyControllerRestTest {
 
-    @Autowired
-    MockMvc mvc;
-
-    @MockBean
-    WatchPartyService watchPartyService;
-
-    @MockBean
-    UserService userService;
-
-    // Damit der Controller-Kontext lädt
-    @MockBean
-    SimpMessagingTemplate messagingTemplate;
-
-    @Autowired
-    ObjectMapper mapper;
+    @Autowired MockMvc mvc;
+    @MockBean WatchPartyService watchPartyService;
+    @MockBean UserService userService;
+    @Autowired ObjectMapper mapper;
 
     @Test
     void getAllParties_ok() throws Exception {
@@ -77,16 +65,9 @@ class WatchPartyControllerRestTest {
         WatchParty wp = new WatchParty();
         wp.setOrganizer(organizer);
         wp.setTitle("Birthday");
-
         when(userService.getUserById(1L)).thenReturn(organizer);
-        when(watchPartyService.createWatchParty(
-            eq(organizer),
-            eq("Birthday"),
-            eq("http://link"),
-            eq("desc"),
-            eq(LocalDateTime.parse("2025-04-30T12:00:00"))))
-        .thenReturn(wp);
-
+        when(watchPartyService.createWatchParty(eq(organizer), eq("Birthday"), eq("http://link"), eq("desc"), eq(LocalDateTime.parse("2025-04-30T12:00:00"))))
+            .thenReturn(wp);
         mvc.perform(post("/api/watchparties")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
@@ -105,7 +86,6 @@ class WatchPartyControllerRestTest {
             "scheduledTime","bad-date"
         );
         String json = mapper.writeValueAsString(payload);
-
         mvc.perform(post("/api/watchparties")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
@@ -122,9 +102,7 @@ class WatchPartyControllerRestTest {
             "scheduledTime","2025-04-30T12:00:00"
         );
         String json = mapper.writeValueAsString(payload);
-
         when(userService.getUserById(2L)).thenReturn(null);
-
         mvc.perform(post("/api/watchparties")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
@@ -135,7 +113,6 @@ class WatchPartyControllerRestTest {
     void inviteUser_success_ok() throws Exception {
         when(watchPartyService.inviteUserToWatchParty(1L,"alice",2L))
             .thenReturn("Invitation sent");
-
         mvc.perform(post("/api/watchparties/1/invites")
                 .param("username","alice")
                 .param("inviterId","2"))
@@ -147,7 +124,6 @@ class WatchPartyControllerRestTest {
     void inviteUser_userNotFound_notFound() throws Exception {
         when(watchPartyService.inviteUserToWatchParty(1L,"bob",2L))
             .thenReturn("Username does not exist");
-
         mvc.perform(post("/api/watchparties/1/invites")
                 .param("username","bob")
                 .param("inviterId","2"))
@@ -159,7 +135,6 @@ class WatchPartyControllerRestTest {
     void getInvitedUsers_ok() throws Exception {
         when(watchPartyService.getInvitedUsers(3L))
             .thenReturn(List.of("u1","u2"));
-
         mvc.perform(get("/api/watchparties/3/invites"))
            .andExpect(status().isOk())
            .andExpect(jsonPath("$[0]").value("u1"));
@@ -169,7 +144,6 @@ class WatchPartyControllerRestTest {
     void handleInviteResponse_success_ok() throws Exception {
         when(watchPartyService.updateInviteStatus(5L,"user","ACCEPTED"))
             .thenReturn(true);
-
         mvc.perform(get("/api/watchparties/5/invite-response")
                 .param("username","user")
                 .param("status","ACCEPTED"))
@@ -181,7 +155,6 @@ class WatchPartyControllerRestTest {
     void handleInviteResponse_failure_notFound() throws Exception {
         when(watchPartyService.updateInviteStatus(5L,"user","DECLINED"))
             .thenReturn(false);
-
         mvc.perform(get("/api/watchparties/5/invite-response")
                 .param("username","user")
                 .param("status","DECLINED"))
@@ -193,7 +166,6 @@ class WatchPartyControllerRestTest {
     void getLatestInviteResponses_ok() throws Exception {
         when(watchPartyService.getLatestInviteResponses(6L))
             .thenReturn(List.of("x - OK"));
-
         mvc.perform(get("/api/watchparties/6/latest-invite-status"))
            .andExpect(status().isOk())
            .andExpect(jsonPath("$[0]").value("x - OK"));
@@ -205,7 +177,6 @@ class WatchPartyControllerRestTest {
         wp.setId(10L);
         wp.setContentLink("http://link");
         when(watchPartyService.getWatchPartyById(10L)).thenReturn(wp);
-
         mvc.perform(get("/api/watchparties/10"))
            .andExpect(status().isOk())
            .andExpect(jsonPath("$.id").value(10))
@@ -216,7 +187,6 @@ class WatchPartyControllerRestTest {
     void getWatchPartyById_notFound() throws Exception {
         when(watchPartyService.getWatchPartyById(11L))
             .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "not found"));
-
         mvc.perform(get("/api/watchparties/11"))
            .andExpect(status().isNotFound());
     }

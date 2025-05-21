@@ -14,7 +14,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -24,10 +23,8 @@ import static org.hamcrest.Matchers.is;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(UserController.class)
 public class UserControllerInegrationTest {
@@ -40,9 +37,6 @@ public class UserControllerInegrationTest {
 
     @MockBean
     private OTPService otpService;
-
-    @MockBean
-    private SimpMessagingTemplate messagingTemplate;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -123,10 +117,9 @@ public class UserControllerInegrationTest {
 
     @Test
     public void removeFriend_shouldReturnNoContent() throws Exception {
-        doNothing().when(userService).removeFriend(1L, 2L);
-
+        Mockito.doNothing().when(userService).removeFriend(1L, 2L);
         mockMvc.perform(delete("/users/1/friends/2"))
-                .andExpect(status().isNoContent());
+            .andExpect(status().isNoContent());
     }
 
     @Test
@@ -134,15 +127,15 @@ public class UserControllerInegrationTest {
         doNothing().when(userService).declineFriendRequest(1L, 2L);
 
         mockMvc.perform(delete("/users/1/friendrequests/2"))
-                .andExpect(status().isNoContent());
+            .andExpect(status().isNoContent());
     }
 
     @Test
     public void declineFriendRequest_noExistingRequest_returnsBadRequest() throws Exception {
         doThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST))
-                .when(userService).declineFriendRequest(1L, 2L);
+        .when(userService).declineFriendRequest(1L, 2L);
 
         mockMvc.perform(delete("/users/1/friendrequests/2"))
-                .andExpect(status().isBadRequest());
+            .andExpect(status().isBadRequest());
     }
 }
