@@ -6,7 +6,7 @@
 
 <br>
 
-![Java](https://img.shields.io/badge/Java-17-orange?logo=java) ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-2.6-green?logo=springboot) ![Gradle](https://img.shields.io/badge/Gradle-7.6-blue?logo=gradle) ![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-Enabled-blue?logo=githubactions) ![Google Cloud](https://img.shields.io/badge/Deployed%20on-Google%20Cloud-blue?logo=googlecloud) ![H2 Database](https://img.shields.io/badge/H2%20Database-Enabled-blue?logo=h2) ![SonarCloud](https://img.shields.io/badge/SonarCloud-Enabled-orange?logo=sonarcloud) ![JaCoCo](https://img.shields.io/badge/JaCoCo-Test%20Coverage-green?logo=jacoco) ![Apache License](https://img.shields.io/badge/license-Apache_2.0-blue)
+[![Java](https://img.shields.io/badge/Java-17-orange?logo=java)](https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html) [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-2.6-green?logo=springboot)](https://spring.io/blog/2021/11/19/spring-boot-2-6-is-now-available) [![Gradle](https://img.shields.io/badge/Gradle-7.6-blue?logo=gradle)](https://docs.gradle.org/7.6/userguide/userguide.html) [![SonarCloud](https://img.shields.io/badge/SonarCloud-Enabled-orange?logo=sonarcloud)](https://sonarcloud.io/organizations/aimalai/projects) [![JaCoCo](https://img.shields.io/badge/JaCoCo-Test%20Coverage-green?logo=jacoco)](https://sonarcloud.io/summary/overall?id=aimalai_sopra-fs25-group-29-server&branch=main) [![Apache License](https://img.shields.io/badge/license-Apache_2.0-blue)](https://github.com/aimalai/sopra-fs25-group-29-server/blob/main/LICENSE)
 
 ## Table of Contents
 
@@ -41,10 +41,6 @@ This project leverages a robust and efficient **backend technology stack** to en
 -   **Google Cloud**: Hosts and deploys the backend, ensuring high availability, scalability, and cloud-based infrastructure reliability.
 -   **H2 Database**: Provides an in-memory relational database, ideal for lightweight testing and rapid backend development.
 
-Further, our tech stack is underpinned by strong security features such as, **OTP 2FA Authentication**, which enhances security with **One-Time Password (OTP) Two-Factor Authentication (2FA)**, ensuring **secure login** and protecting user data from unauthorized access.
-
-Additionally, the **backend has been rigorously tested** using **SonarCloud and JaCoCo**, ensuring code quality and reliability. The test coverage exceeded **75%**, demonstrating a strong commitment to maintainability and robustness.
-
 This combination of technologies ensures an **efficient and maintainable server-side architecture** while supporting **continuous integration and cloud-based deployment**.
 
 ---
@@ -53,71 +49,73 @@ This combination of technologies ensures an **efficient and maintainable server-
 
 ## High-Level Components
 
-Below are the 3 main components (i.e., functional groupings that have a focused responsibility) of our application's Backend:
-
-### User Management
-
-This component handles all operations related to user accounts, including creating users, retrieving user information, updating details, and managing authentication (login/logout). The central class for this component is <a href="src/main/java/ch/uzh/ifi/hase/soprafs24/service/UserService.java" style="color: blue; text-decoration: underline;">UserService</a>.
-
-#### Key functionalities:
-
--   **User registration**:
-    -   `createUser(User newUser)`: Creates a new user by generating a unique token, setting the initial status, validating the email, checking for duplicate usernames/emails, encoding the password, and sending a welcome email.
--   **User retrieval**:
-    -   `getUsers()`: Retrieves all users from the database.
-    -   `getUserById(Long userId)`: Retrieves a specific user by their ID.
--   **User updates**:
-    -   `updateUser(Long userId, User userData)`: Allows users to modify their profiles, including username, password, birthday, email, and biography.
--   **Profile picture management**:
-    -   `uploadProfilePicture(Long userId, MultipartFile file)`: Handles uploading and storing user profile pictures.
--   **Database interactions**:
-    -   Managed using the `UserRepository` interface.
-
-### User Authentication
-
-This component verifies user identity and manages sessions, including login, OTP (One-Time Password) verification, and session handling. <a href="src/main/java/ch/uzh/ifi/hase/soprafs24/controller/UserController.java" style="color: blue; text-decoration: underline;">UserController</a> handles login and OTP verification endpoints, while <a href="src/main/java/ch/uzh/ifi/hase/soprafs24/service/OTPService.java" style="color: blue; text-decoration: underline;">OTPService</a> generates and verifies OTPs.
-
-#### Key functionalities:
-
--   **Login**:
-    -   `loginUser(UserPostDTO userPostDTO)`: Handles user login via `UserController`, validating credentials and setting the user's status to online. Also manages failed login attempts and account locking.
--   **Logout**:
-    -   `logoutUser(Long userId)`: Sets the user’s status to offline.
--   **OTP management**:
-    -   `sendOTP(Map<String, String> payload)`: Sends OTP for user authentication.
-    -   `verifyOTP(Map<String, String> payload)`: Verifies OTP during login.
--   **Token authentication**:
-    -   `getUserByToken(String token)`: Retrieves a user based on their authentication token.
-
-### Friend and Watchlist Management
-
-This component manages user friendships and movie watchlists. <a href="src/main/java/ch/uzh/ifi/hase/soprafs24/service/UserService.java" style="color: blue; text-decoration: underline;">UserService</a> handles friend requests, accepting/declining them, retrieving friend lists, and managing movie additions/removals from watchlists. <a href="src/main/java/ch/uzh/ifi/hase/soprafs24/controller/UserController.java" style="color: blue; text-decoration: underline;">UserController</a> exposes API endpoints for these functionalities.
-
-#### Key functionalities:
-
-**Watchlist management**:
-
--   `addMovieToWatchlist(Long userId, String jsonString)`: Adds a movie🍿 to a user's watchlist.
--   `getWatchlist(Long userId)`: Retrieves the user's watchlist.
--   `removeMovieFromWatchlist(Long userId, String movieId)`: Removes a movie from the user's watchlist.
-
-**Friend request management**:
-
--   `sendFriendRequest(Long targetUserId, Long fromUserId)`: Sends a friend request.
--   `acceptFriendRequest(Long targetUserId, Long fromUserId)`: Accepts a friend request.
--   `declineFriendRequest(Long targetUserId, Long fromUserId)`: Declines a friend request.
--   `getFriendRequests(Long userId)`: Retrieves the list of friend requests for a user.
-
-**Friend list management**:
-
--   `getFriends(Long userId)`: Retrieves a user's friends list.
--   `removeFriend(Long userId, Long friendId)`: Removes a friend from the user's list.
-
-**Friend status verification**:
-
--   `areFriends(Long userId, Long otherUserId)`: Checks if two users are friends.
+The backend is organized into five main components, each responsible for a distinct area of business logic and API communication.
 
 ---
+
+### 1. [User Management](./src/main/java/.../UserController.java)  
+**Role:** Manages user accounts, friendships, invitations, and account settings.  
+**Responsibilities:**  
+- Register and authenticate users (with optional OTP)  
+- Handle friend requests, acceptance, and listing  
+- Retrieve user info and update profile settings  
+- Interface with services like `UserService`, `EmailService`, and `OTPService`  
+**Main files:**  
+- `UserController.java`  
+- `UserService.java`  
+- `EmailService.java`, `OTPService.java`  
+- `User.java`, `Invite.java`
+
+---
+
+### 2. [Movie API and Watchlists](./src/main/java/.../MovieController.java)  
+**Role:** Integrates with external APIs (e.g., TMDB) and handles watchlist logic.  
+**Responsibilities:**  
+- Search movies via TMDB API  
+- Add/remove items to/from personal watchlist  
+- Aggregate top-rated items from friends  
+- Provide trending content  
+**Main files:**  
+- `MovieController.java`  
+- `MovieService.java`
+
+---
+
+### 3. [Watchparty Management](./src/main/java/.../WatchPartyController.java)  
+**Role:** Coordinates creation, invitation, and listing of scheduled watchparties.  
+**Responsibilities:**  
+- Create new parties with video links and metadata  
+- Send and manage party invitations  
+- Retrieve upcoming or invited watchparties  
+**Main files:**  
+- `WatchPartyController.java`  
+- `WatchPartyService.java`  
+- `WatchParty.java`
+
+---
+
+### 4. [Real-time Lobby Synchronization](./src/main/java/.../LobbyController.java)  
+**Role:** Enables synchronized playback and state tracking in watchparty lobbies using WebSocket.  
+**Responsibilities:**  
+- Track who has joined/left the lobby  
+- Manage readiness states  
+- Broadcast host’s video timestamp for sync  
+**Main files:**  
+- `LobbyController.java`  
+**Technology:** Spring WebSocket (STOMP + SockJS)
+
+---
+
+### 5. [Ratings and Chat System](./src/main/java/.../UserRatingController.java)  
+**Role:** Manages user ratings, textual reviews, and chat messages for movies.  
+**Responsibilities:**  
+- Submit and update user star ratings and reviews  
+- Retrieve average ratings and per-user feedback  
+- Send and receive chat messages (via `ChatController`)  
+**Main files:**  
+- `UserRatingController.java`, `ChatController.java`  
+- `UserRatingService.java`, `UserRating.java`
+
 
 ##### [Back to Top](#table-of-contents)
 
@@ -129,13 +127,12 @@ This component manages user friendships and movie watchlists. <a href="src/main/
 
 ```sh
 git clone https://github.com/aimalai/sopra-fs25-group-29-server.git
-cd sopra-fs25-group-29-server
 ```
 
-#### Navigate to the backend directory:
+#### Navigate to the server directory:
 
 ```sh
-cd backend
+cd sopra-fs25-group-29-server
 ```
 
 #### Build the backend project:
@@ -147,20 +144,12 @@ cd backend
 #### Run the backend application:
 
 ```sh
-./gradlew bootRun
+./gradlew bootrun
 ```
 
 The backend server should now be running at [http://localhost:8080](http://localhost:8080).
 
-### How to Run Tests
-
-#### Navigate to the backend directory:
-
-```sh
-cd backend
-```
-
-#### Run backend tests:
+### How to Run Tests:
 
 ```sh
 ./gradlew test
