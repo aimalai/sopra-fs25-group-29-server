@@ -11,6 +11,8 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
+import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.stereotype.Controller;
 
 @Controller
@@ -22,15 +24,15 @@ public class LobbyController {
     private final Map<String, String> roomHosts = new ConcurrentHashMap<>();
 
     public Map<String, String> getSessionUsernames() {
-    return sessionUsernames;
+        return sessionUsernames;
     }
 
     public Map<String, Map<String, Boolean>> getRoomStates() {
-    return roomStates;
+        return roomStates;
     }
 
     public Map<String, String> getRoomHosts() {
-    return roomHosts;
+        return roomHosts;
     }
     
     public LobbyController(SimpMessagingTemplate messagingTemplate) {
@@ -39,15 +41,23 @@ public class LobbyController {
 
     @MessageExceptionHandler(Exception.class)
     public void handleStompError(Exception ex, Message<?> message) {
-        String destination = (String) message.getHeaders().get("simpDestination");
-        String[] parts = destination.split("/");
-        if (parts.length >= 3) {
-            String roomId = parts[2];
-            messagingTemplate.convertAndSend(
-                    "/topic/errors/" + roomId,
-                    ex.getMessage()
-            );
+        StompHeaderAccessor accessor = MessageHeaderAccessor
+            .getAccessor(message, StompHeaderAccessor.class);
+        String destination = (accessor != null) ? accessor.getDestination() : null;
+        if (destination == null || destination.isEmpty()) {
+            return;
         }
+
+        String[] parts = destination.split("/");
+        if (parts.length < 3 || parts[2].isEmpty()) {
+            return;
+        }
+
+        String roomId = parts[2];
+        messagingTemplate.convertAndSend(
+            "/topic/errors/" + roomId,
+            ex.getMessage()
+        );
     }
 
     public static class ParticipantMessage {
