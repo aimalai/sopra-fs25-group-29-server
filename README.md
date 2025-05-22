@@ -164,7 +164,7 @@ Test results will be displayed in the console.
 
 The application integrates with the **TMDB API** to fetch Movies and TV related data.
 
-More information about the TMDB API key and token can be found in the `application.properties` file.
+More information about the TMDB API key and token can be found in the [application.properties](https://github.com/aimalai/sopra-fs25-group-29-server/blob/main/src/main/resources/application.properties) file.
 
 #### H2 Database (for development/testing):
 
