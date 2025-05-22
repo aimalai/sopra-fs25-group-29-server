@@ -53,7 +53,7 @@ The backend is organized into five main components, each responsible for a disti
 
 ---
 
-### 1. [User Management](./src/main/java/.../UserController.java)  
+### 1. [User Management](./src/main/java/ch/uzh/ifi/hase/soprafs24/controller/UserController.java)  
 **Role:** Manages user accounts, friendships, invitations, and account settings.  
 **Responsibilities:**  
 - Register and authenticate users (with optional OTP)  
@@ -68,7 +68,7 @@ The backend is organized into five main components, each responsible for a disti
 
 ---
 
-### 2. [Movie API and Watchlists](./src/main/java/.../MovieController.java)  
+### 2. [Movie API and Watchlists](./src/main/java/ch/uzh/ifi/hase/soprafs24/controller/MovieController.java)  
 **Role:** Integrates with external APIs (e.g., TMDB) and handles watchlist logic.  
 **Responsibilities:**  
 - Search movies via TMDB API  
@@ -81,7 +81,7 @@ The backend is organized into five main components, each responsible for a disti
 
 ---
 
-### 3. [Watchparty Management](./src/main/java/.../WatchPartyController.java)  
+### 3. [Watchparty Management](./src/main/java/ch/uzh/ifi/hase/soprafs24/controller/WatchPartyController.java)  
 **Role:** Coordinates creation, invitation, and listing of scheduled watchparties.  
 **Responsibilities:**  
 - Create new parties with video links and metadata  
@@ -94,7 +94,7 @@ The backend is organized into five main components, each responsible for a disti
 
 ---
 
-### 4. [Real-time Lobby Synchronization](./src/main/java/.../LobbyController.java)  
+### 4. [Real-time Lobby Synchronization](./src/main/java/ch/uzh/ifi/hase/soprafs24/controller/LobbyController.java)  
 **Role:** Enables synchronized playback and state tracking in watchparty lobbies using WebSocket.  
 **Responsibilities:**  
 - Track who has joined/left the lobby  
@@ -106,7 +106,7 @@ The backend is organized into five main components, each responsible for a disti
 
 ---
 
-### 5. [Ratings and Chat System](./src/main/java/.../UserRatingController.java)  
+### 5. [Ratings and Chat System](./src/main/java/ch/uzh/ifi/hase/soprafs24/controller/UserRatingController.java)  
 **Role:** Manages user ratings, textual reviews, and chat messages for movies.  
 **Responsibilities:**  
 - Submit and update user star ratings and reviews  
